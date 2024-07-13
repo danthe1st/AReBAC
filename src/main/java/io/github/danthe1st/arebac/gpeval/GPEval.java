@@ -300,7 +300,39 @@ public class GPEval {
 		return currentEdge.edge.edgeType().equals(graphEdge.edgeType()) &&
 				currentEdge.otherNode.nodeType().equals(neighbor.nodeType()) &&
 				checkAttributeRequirements(pattern.edgeRequirements().get(currentEdge.edge), graphEdge) &&
-				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor);
+				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor) &&
+				checkHasNecessaryEdges(currentEdge.otherNode, neighbor);
+	}
+	
+	private boolean checkHasNecessaryEdges(GPNode node, GraphNode graphNode) {
+		// fix duplicate code
+		for(GPEdge edge : Objects.requireNonNullElse(pattern.graph().outgoingEdges().get(node), List.<GPEdge>of())){
+			boolean isSatisfied = false;
+			GPNode otherNode = edge.target();
+			GraphNode otherGraphNode = assignments.get(otherNode);
+			for(GraphEdge graphEdge : graph.outgoingEdges().get(graphNode)){
+				if(edge.edgeType().equals(graphEdge.edgeType()) && (otherGraphNode == null || graphEdge.target().equals(otherGraphNode))){
+					isSatisfied = true;
+				}
+			}
+			if(!isSatisfied){
+				return false;
+			}
+		}
+		for(GPEdge edge : Objects.requireNonNullElse(pattern.graph().incomingEdges().get(node), List.<GPEdge>of())){
+			boolean isSatisfied = false;
+			GPNode otherNode = edge.source();
+			GraphNode otherGraphNode = assignments.get(otherNode);
+			for(GraphEdge graphEdge : graph.incomingEdges().get(graphNode)){
+				if(edge.edgeType().equals(graphEdge.edgeType()) && (otherGraphNode == null || graphEdge.source().equals(otherGraphNode))){
+					isSatisfied = true;
+				}
+			}
+			if(!isSatisfied){
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private boolean checkAttributeRequirements(List<AttributeRequirement> requirements, AttributeAware graphElement) {

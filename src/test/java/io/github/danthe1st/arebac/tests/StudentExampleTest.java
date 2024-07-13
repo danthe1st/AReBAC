@@ -52,8 +52,10 @@ class StudentExampleTest {
 		GraphNode requestor = new GraphNode("1337331", "prof", Map.of());
 		GraphNode student = new GraphNode("12345678", "student", Map.of());
 		GraphNode course = new GraphNode("somecourse", "course", Map.of());
+		GraphNode otherCourse = new GraphNode("othercourse", "course", Map.of());
 		GraphEdge attendCourse = new GraphEdge(student, course, "ac", "attend_course", Map.of("grade", AttributeValue.attribute(1)));
+		GraphEdge attendOtherCourse = new GraphEdge(student, otherCourse, "ac2", "attend_course", Map.of("grade", AttributeValue.attribute(1)));
 		GraphEdge teachCourse = new GraphEdge(requestor, course, "tc", "teach_course", Map.of());
-		return new Graph(List.of(requestor, student, course), List.of(attendCourse, teachCourse));
+		return new Graph(List.of(requestor, student, course), List.of(attendCourse, attendOtherCourse, teachCourse));
 	}
 }
