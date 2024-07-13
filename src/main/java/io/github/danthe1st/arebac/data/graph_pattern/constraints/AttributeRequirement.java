@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import io.github.danthe1st.arebac.TypeMissmatchException;
+import io.github.danthe1st.arebac.data.graph.AttributeAware;
 import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
 import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.NumericalAttributeValue;
 
@@ -26,7 +27,8 @@ public record AttributeRequirement(
 		assert boolToEnsureExhaustivenessChecking;
 	}
 
-	public boolean evaluate(Map<String, AttributeValue<?>> attributes) {
+	public boolean evaluate(AttributeAware aware) {
+		Map<String, AttributeValue<?>> attributes = aware.attributes();
 		AttributeValue<?> attributeValue = attributes.get(key);
 		if(attributeValue == null){
 			return false;

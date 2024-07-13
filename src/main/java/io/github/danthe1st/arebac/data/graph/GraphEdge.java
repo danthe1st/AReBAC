@@ -9,7 +9,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
 public record GraphEdge(
 		GraphNode source, GraphNode target,
 		String id, String edgeType,
-		Map<String, AttributeValue<?>> attributes) implements CommonEdge<GraphNode> {
+		Map<String, AttributeValue<?>> attributes) implements CommonEdge<GraphNode>, AttributeAware {
 	public GraphEdge {
 		Objects.requireNonNull(source);
 		Objects.requireNonNull(target);

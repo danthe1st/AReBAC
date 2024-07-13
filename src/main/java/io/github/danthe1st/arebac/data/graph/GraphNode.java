@@ -9,7 +9,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
 public record GraphNode(
 		String id,
 		String nodeType,
-		Map<String, AttributeValue<?>> attributes) implements CommonNode {
+		Map<String, AttributeValue<?>> attributes) implements CommonNode, AttributeAware {
 	public GraphNode {
 		Objects.requireNonNull(id);
 		Objects.requireNonNull(nodeType);

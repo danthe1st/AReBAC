@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.github.danthe1st.arebac.data.graph.AttributeAware;
 import io.github.danthe1st.arebac.data.graph.Graph;
 import io.github.danthe1st.arebac.data.graph.GraphEdge;
 import io.github.danthe1st.arebac.data.graph.GraphNode;
@@ -37,7 +38,6 @@ public class GPEval {
 	private Set<List<GraphNode>> results = new HashSet<>();
 
 	public static Set<List<GraphNode>> evaluate(Graph graph, GraphPattern pattern) {
-
 		GPEval eval = new GPEval(graph, pattern);
 		try{
 			eval.init();
@@ -124,7 +124,7 @@ public class GPEval {
 
 	private boolean checkRequirementsForNode(GPNode patternNode, GraphNode graphNode) {
 		for(AttributeRequirement requirement : pattern.nodeRequirements().get(patternNode)){
-			if(!requirement.evaluate(graphNode.attributes())){
+			if(!requirement.evaluate(graphNode)){
 				return false;
 			}
 		}
@@ -290,31 +290,16 @@ public class GPEval {
 	private boolean satisfiesRequirements(RelevantEdge currentEdge, GraphEdge graphEdge, GraphNode neighbor) {
 		return currentEdge.edge.edgeType().equals(graphEdge.edgeType()) &&
 				currentEdge.otherNode.nodeType().equals(neighbor.nodeType()) &&
-				checkEdgeAttributeRequirements(currentEdge, graphEdge) &&
-				checkNodeAttributeRequirements(currentEdge.otherNode, neighbor);
+				checkAttributeRequirements(pattern.edgeRequirements().get(currentEdge.edge), graphEdge) &&
+				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor);
 	}
 
-	// TODO use interface to reduce duplicate code between checkNodeAttributeRequirements and checkEdgeAttributeRequirements
-	private boolean checkNodeAttributeRequirements(GPNode otherNode, GraphNode neighbor) {
-		List<AttributeRequirement> requirements = pattern.nodeRequirements().get(otherNode);
+	private boolean checkAttributeRequirements(List<AttributeRequirement> requirements, AttributeAware graphElement) {
 		if(requirements == null){
 			return true;
 		}
 		for(AttributeRequirement attributeRequirement : requirements){
-			if(!attributeRequirement.evaluate(neighbor.attributes())){
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	private boolean checkEdgeAttributeRequirements(RelevantEdge currentEdge, GraphEdge graphEdge) {
-		List<AttributeRequirement> requirements = pattern.edgeRequirements().get(currentEdge.edge);
-		if(requirements == null){
-			return true;
-		}
-		for(AttributeRequirement attributeRequirement : requirements){
-			if(!attributeRequirement.evaluate(graphEdge.attributes())){
+			if(!attributeRequirement.evaluate(graphElement)){
 				return false;
 			}
 		}
@@ -325,14 +310,11 @@ public class GPEval {
 		List<GPEdge> outgoingEdges = pattern.graph().outgoingEdges().get(currentNode);
 		List<GPEdge> incomingEdges = pattern.graph().incomingEdges().get(currentNode);
 
-//		Map<GPEdge, GPNode> relevantEdges = new HashMap<>();
 		List<RelevantEdge> relevantEdges = new ArrayList<>();
 		for(GPEdge edge : incomingEdges){
-//			relevantEdges.put(edge, edge.source());
 			relevantEdges.add(new RelevantEdge(edge, edge.source(), false));
 		}
 		for(GPEdge edge : outgoingEdges){
-//			relevantEdges.put(edge, edge.target());
 			relevantEdges.add(new RelevantEdge(edge, edge.target(), true));
 		}
 		return relevantEdges;
