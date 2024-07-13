@@ -19,6 +19,7 @@ import io.github.danthe1st.arebac.data.graph.GraphNode;
 import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
 import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.StringAttribute;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
+import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
@@ -303,28 +304,23 @@ public class GPEval {
 				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor) &&
 				checkHasNecessaryEdges(currentEdge.otherNode, neighbor);
 	}
-	
+
 	private boolean checkHasNecessaryEdges(GPNode node, GraphNode graphNode) {
-		// fix duplicate code
-		for(GPEdge edge : Objects.requireNonNullElse(pattern.graph().outgoingEdges().get(node), List.<GPEdge>of())){
-			boolean isSatisfied = false;
-			GPNode otherNode = edge.target();
-			GraphNode otherGraphNode = assignments.get(otherNode);
-			for(GraphEdge graphEdge : graph.outgoingEdges().get(graphNode)){
-				if(edge.edgeType().equals(graphEdge.edgeType()) && (otherGraphNode == null || graphEdge.target().equals(otherGraphNode))){
-					isSatisfied = true;
-				}
-			}
-			if(!isSatisfied){
-				return false;
-			}
+		boolean satisfied = checkNecessaryEdgesOneDirection(node, graphNode, Graph::outgoingEdges, GPGraph::outgoingEdges, GraphEdge::target, GPEdge::target);
+		if(!satisfied){
+			return false;
 		}
-		for(GPEdge edge : Objects.requireNonNullElse(pattern.graph().incomingEdges().get(node), List.<GPEdge>of())){
+
+		return checkNecessaryEdgesOneDirection(node, graphNode, Graph::incomingEdges, GPGraph::incomingEdges, GraphEdge::source, GPEdge::source);
+	}
+
+	private boolean checkNecessaryEdgesOneDirection(GPNode node, GraphNode graphNode, Function<Graph, Map<GraphNode, List<GraphEdge>>> edgeDiscovery, Function<GPGraph, Map<GPNode, List<GPEdge>>> gpEdgeDiscovery, Function<GraphEdge, GraphNode> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {
+		for(GPEdge edge : Objects.requireNonNullElse(gpEdgeDiscovery.apply(pattern.graph()).get(node), List.<GPEdge>of())){
 			boolean isSatisfied = false;
-			GPNode otherNode = edge.source();
+			GPNode otherNode = gpOtherNodeFinder.apply(edge);
 			GraphNode otherGraphNode = assignments.get(otherNode);
-			for(GraphEdge graphEdge : graph.incomingEdges().get(graphNode)){
-				if(edge.edgeType().equals(graphEdge.edgeType()) && (otherGraphNode == null || graphEdge.source().equals(otherGraphNode))){
+			for(GraphEdge graphEdge : edgeDiscovery.apply(graph).get(graphNode)){
+				if(edge.edgeType().equals(graphEdge.edgeType()) && (otherGraphNode == null || edgeOtherNodeFinder.apply(graphEdge).equals(otherGraphNode))){
 					isSatisfied = true;
 				}
 			}
