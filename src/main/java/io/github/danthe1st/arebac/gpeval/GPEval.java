@@ -16,6 +16,8 @@ import io.github.danthe1st.arebac.data.graph.AttributeAware;
 import io.github.danthe1st.arebac.data.graph.Graph;
 import io.github.danthe1st.arebac.data.graph.GraphEdge;
 import io.github.danthe1st.arebac.data.graph.GraphNode;
+import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
+import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.StringAttribute;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
@@ -93,7 +95,11 @@ public class GPEval {
 			List<AttributeRequirement> requirements = attributeRequirementEntry.getValue();
 			for(AttributeRequirement requirement : requirements){
 				if(AttributeRequirement.ID_KEY.equals(requirement.key())){
-					GraphNode graphNode = graph.nodes().get(requirement.key());
+					AttributeValue<?> requirementValue = requirement.value();
+					if(!(requirementValue instanceof StringAttribute)){
+						throw new IllegalStateException("ID requirements must be strings");
+					}
+					GraphNode graphNode = graph.nodes().get(requirementValue.value());
 					if(graphNode == null){
 						throw new NoResultException("Fixed node cannot be found");
 					}
@@ -149,7 +155,10 @@ public class GPEval {
 
 		GPNode currentNode = pickNextNode();
 		Set<GraphNode> currentNodeCandidates = candidates.get(currentNode);
-		filterMutualExclusionConstraints(currentNode, currentNodeCandidates, mutualExclusionConstraints.get(currentNode), incomingConflicts.get(currentNode));
+		Set<GPNode> exclusionConstraints = mutualExclusionConstraints.get(currentNode);
+		if(exclusionConstraints != null){
+			filterMutualExclusionConstraints(currentNode, currentNodeCandidates, exclusionConstraints, incomingConflicts.get(currentNode));
+		}
 		for(GraphNode candidateNode : currentNodeCandidates){
 			Map<GPNode, Set<GraphNode>> newCandidates = new HashMap<>(candidates);
 			newCandidates.remove(currentNode);
@@ -243,7 +252,7 @@ public class GPEval {
 				assert otherNodeCandidates == null || !otherNodeCandidates.isEmpty();// I think this shouldn't happen, null is written as empty in the paper
 				Set<GPNode> otherNodeIncomingConflicts = incomingConflicts.computeIfAbsent(otherNode, n -> new HashSet<>());
 				Set<GPNode> currentNodeIncomingConflicts = incomingConflicts.computeIfAbsent(currentNode, n -> new HashSet<>());
-				if(otherNodeCandidates == null || !neighbors.containsAll(otherNodeCandidates)){
+				if(otherNodeCandidates == null || !neighbors.containsAll(Objects.requireNonNullElse(otherNodeCandidates, List.of()))){
 					otherNodeIncomingConflicts.addAll(currentNodeIncomingConflicts);
 					otherNodeIncomingConflicts.add(currentNode);
 				}
@@ -305,10 +314,10 @@ public class GPEval {
 		}
 		return true;
 	}
-	
+
 	private List<RelevantEdge> getRelevantEdges(GPNode currentNode) {
-		List<GPEdge> outgoingEdges = pattern.graph().outgoingEdges().get(currentNode);
-		List<GPEdge> incomingEdges = pattern.graph().incomingEdges().get(currentNode);
+		List<GPEdge> outgoingEdges = Objects.requireNonNullElse(pattern.graph().outgoingEdges().get(currentNode), List.of());
+		List<GPEdge> incomingEdges = Objects.requireNonNullElse(pattern.graph().incomingEdges().get(currentNode), List.of());
 
 		List<RelevantEdge> relevantEdges = new ArrayList<>();
 		for(GPEdge edge : incomingEdges){

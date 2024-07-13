@@ -8,6 +8,7 @@ import io.github.danthe1st.arebac.TypeMissmatchException;
 import io.github.danthe1st.arebac.data.graph.AttributeAware;
 import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
 import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.NumericalAttributeValue;
+import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.StringAttribute;
 
 public record AttributeRequirement(
 		String key, AttributeRequirementOperator operator, AttributeValue<?> value) {
@@ -25,10 +26,17 @@ public record AttributeRequirement(
 		case EQUAL -> true;
 		};
 		assert boolToEnsureExhaustivenessChecking;
+		
+		if(ID_KEY.equals(key) && !(value instanceof StringAttribute)){
+			throw new IllegalArgumentException("ID requirements must be Strings");
+		}
 	}
 
 	public boolean evaluate(AttributeAware aware) {
 		Map<String, AttributeValue<?>> attributes = aware.attributes();
+		if(ID_KEY.equals(key)){
+			return value.value().equals(aware.id());
+		}
 		AttributeValue<?> attributeValue = attributes.get(key);
 		if(attributeValue == null){
 			return false;
@@ -49,7 +57,7 @@ public record AttributeRequirement(
 
 	}
 
-	private boolean checkNumeric(AttributeValue<?> toCheck, Predicate<NumericalAttributeValue<?>> evaluator) {
+	private static boolean checkNumeric(AttributeValue<?> toCheck, Predicate<NumericalAttributeValue<?>> evaluator) {
 		if(!(toCheck instanceof NumericalAttributeValue<?> checked)){
 			throw new TypeMissmatchException(NumericalAttributeValue.class, toCheck);
 		}

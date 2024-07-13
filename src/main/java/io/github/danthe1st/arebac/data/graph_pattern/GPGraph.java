@@ -27,7 +27,8 @@ public record GPGraph(Map<String, GPNode> nodes,
 
 		nodes = Map.copyOf(nodes);
 		outgoingEdges = Map.copyOf(outgoingEdges);
-		incomingEdges = Map.copyOf(outgoingEdges);
-		validate();
+		incomingEdges = Map.copyOf(incomingEdges);
+
+		CommonGraph.validate(nodes, outgoingEdges, incomingEdges);
 	}
 }

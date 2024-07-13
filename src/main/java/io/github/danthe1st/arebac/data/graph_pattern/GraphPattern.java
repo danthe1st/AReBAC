@@ -28,28 +28,28 @@ public record GraphPattern(
 		returnedNodes = List.copyOf(returnedNodes);
 		
 		for(GPNode node : returnedNodes){
-			checkGraphHasNode(node);
+			checkGraphHasNode(graph, node);
 		}
 		for(GPNode node : nodeRequirements.keySet()){
-			checkGraphHasNode(node);
+			checkGraphHasNode(graph, node);
 		}
 		for(GPEdge edge : edgeRequirements.keySet()){
-			checkGraphHasEdge(edge);
+			checkGraphHasEdge(graph, edge);
 		}
 		for(MutualExclusionConstraint mutualExclusionConstraint : mutualExclusionConstraints){
-			checkGraphHasNode(mutualExclusionConstraint.first());
-			checkGraphHasNode(mutualExclusionConstraint.second());
+			checkGraphHasNode(graph, mutualExclusionConstraint.first());
+			checkGraphHasNode(graph, mutualExclusionConstraint.second());
 		}
 	}
 	
-	private void checkGraphHasNode(GPNode node) {
+	private static void checkGraphHasNode(GPGraph graph, GPNode node) {
 		GPNode graphNode = graph.nodes().get(node.id());
 		if(!node.equals(graphNode)){
 			throw new IllegalArgumentException("node missing in graph: " + node);
 		}
 	}
 	
-	private void checkGraphHasEdge(GPEdge edge) {
+	private static void checkGraphHasEdge(GPGraph graph, GPEdge edge) {
 		List<GPEdge> edges = graph.outgoingEdges().get(edge.source());
 		if(edges == null){
 			throw new IllegalArgumentException("edge missing in graph: " + edge);

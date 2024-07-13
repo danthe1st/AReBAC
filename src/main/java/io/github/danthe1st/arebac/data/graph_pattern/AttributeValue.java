@@ -18,6 +18,17 @@ public sealed interface AttributeValue<T> {
 		}
 	}
 
+	public record BooleanAttribute(boolean boolValue) implements AttributeValue<Boolean> {
+		public BooleanAttribute {
+			Objects.requireNonNull(boolValue);
+		}
+		
+		@Override
+		public Boolean value() {
+			return boolValue;
+		}
+	}
+	
 	public record IntAttribute(int intValue) implements NumericalAttributeValue<Integer> {
 
 		@Override
@@ -32,5 +43,13 @@ public sealed interface AttributeValue<T> {
 		public Integer value() {
 			return intValue;
 		}
+	}
+	
+	static IntAttribute attribute(int value) {
+		return new IntAttribute(value);
+	}
+	
+	static StringAttribute attribute(String value) {
+		return new StringAttribute(value);
 	}
 }

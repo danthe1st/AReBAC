@@ -12,8 +12,8 @@ public interface CommonGraph<N extends CommonNode, E extends CommonEdge<N>> {
 	Map<N, List<E>> outgoingEdges();
 	Map<N, List<E>> incomingEdges();
 	
-	default void validate() {
-		nodes().forEach((k, v) -> {
+	static <N extends CommonNode, E extends CommonEdge<N>> void validate(Map<String, N> nodes, Map<N, List<E>> outgoingEdges, Map<N, List<E>> incomingEdges) {
+		nodes.forEach((k, v) -> {
 			Objects.requireNonNull(k);
 			Objects.requireNonNull(v);
 			if(!k.equals(v.id())){
@@ -21,8 +21,8 @@ public interface CommonGraph<N extends CommonNode, E extends CommonEdge<N>> {
 			}
 		});
 		Set<E> allEdges = new HashSet<>();
-		for(N node : outgoingEdges().keySet()){
-			List<E> edges = outgoingEdges().get(node);
+		for(N node : outgoingEdges.keySet()){
+			List<E> edges = outgoingEdges.get(node);
 			allEdges.addAll(edges);
 			for(E edge : edges){
 				if(!node.equals(edge.source())){
@@ -31,8 +31,8 @@ public interface CommonGraph<N extends CommonNode, E extends CommonEdge<N>> {
 			}
 		}
 		int incomingEdgeCount = 0;
-		for(N node : incomingEdges().keySet()){
-			List<E> edges = incomingEdges().get(node);
+		for(N node : incomingEdges.keySet()){
+			List<E> edges = incomingEdges.get(node);
 			incomingEdgeCount += edges.size();
 			for(E edge : edges){
 				if(!allEdges.contains(edge)){
