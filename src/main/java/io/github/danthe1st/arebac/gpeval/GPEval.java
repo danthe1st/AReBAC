@@ -90,7 +90,6 @@ public class GPEval {
 	}
 
 	private void setupFixedVertices() throws NoResultException {
-		// TODO: fixed vertices other than fixed ID?
 		for(Map.Entry<GPNode, List<AttributeRequirement>> attributeRequirementEntry : pattern.nodeRequirements().entrySet()){
 			GPNode patternNode = attributeRequirementEntry.getKey();
 			List<AttributeRequirement> requirements = attributeRequirementEntry.getValue();
@@ -123,9 +122,6 @@ public class GPEval {
 			if(graphNodes.isEmpty()){
 				throw new NoResultException("node cannot be assigned without violating constraints: " + patternNode);
 			}
-
-			// TODO check edge requirements
-			// TODO what about mutual exclusion constraints?
 		}
 	}
 
@@ -158,7 +154,7 @@ public class GPEval {
 		Set<GraphNode> currentNodeCandidates = candidates.get(currentNode);
 		Set<GPNode> exclusionConstraints = mutualExclusionConstraints.get(currentNode);
 		if(exclusionConstraints != null){
-			filterMutualExclusionConstraints(currentNode, currentNodeCandidates, exclusionConstraints, incomingConflicts.get(currentNode));
+			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, incomingConflicts.get(currentNode));
 		}
 		for(GraphNode candidateNode : currentNodeCandidates){
 			Map<GPNode, Set<GraphNode>> newCandidates = new HashMap<>(candidates);
@@ -230,7 +226,7 @@ public class GPEval {
 		return candidate;
 	}
 
-	private void filterMutualExclusionConstraints(GPNode currentCandidateNode, Set<GraphNode> candidatesForNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts) {
+	private void filterMutualExclusionConstraints(Set<GraphNode> candidatesForNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts) {
 		for(Iterator<GraphNode> it = candidatesForNode.iterator(); it.hasNext();){
 			GraphNode graphCandidate = it.next();
 			for(GPNode exclusionConstraint : exclusionConstraints){
@@ -243,7 +239,6 @@ public class GPEval {
 	}
 
 	private boolean forwardChecking(GPNode currentNode, Map<GPNode, Set<GPNode>> incomingConflicts, Set<GPNode> outgoingConflicts) {
-
 		List<RelevantEdge> relevantEdges = getRelevantEdges(currentNode);
 		for(RelevantEdge relevantEdge : relevantEdges){
 			GPNode otherNode = relevantEdge.otherNode();
@@ -284,9 +279,7 @@ public class GPEval {
 			graphEdges = graph.incomingEdges().get(currentNodeInDB);
 			neighborFinder = GraphEdge::source;
 		}
-		if(graphEdges == null){
-			graphEdges = List.of();
-		}
+		graphEdges = Objects.requireNonNullElse(graphEdges, List.of());
 		List<GraphNode> neighborsSatisfyingRequirements = new ArrayList<>();
 		for(GraphEdge graphEdge : graphEdges){
 			GraphNode neighbor = neighborFinder.apply(graphEdge);
