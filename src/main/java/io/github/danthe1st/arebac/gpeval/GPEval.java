@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeAware;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.StringAttribute;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
@@ -33,7 +33,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusion
  * @param <N> The type of nodes in the graph
  * @param <E> The type of edges in the graph
  */
-public class GPEval<N extends AttributedNode, E extends AttributedGraphEdge<N>> {
+public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdge<N>> {
 
 	private final AttributedGraph<N, E> graph;
 	private final GraphPattern pattern;
@@ -359,7 +359,7 @@ public class GPEval<N extends AttributedNode, E extends AttributedGraphEdge<N>> 
 		return relevantEdges;
 	}
 
-	record RelevantEdge(GPEdge edge, GPNode otherNode, boolean isOutgoing) {
+	private record RelevantEdge(GPEdge edge, GPNode otherNode, boolean isOutgoing) {
 	}
 
 }
