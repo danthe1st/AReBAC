@@ -6,8 +6,15 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.github.danthe1st.arebac.data.commongraph.CommonInMemoryGraph;
+import io.github.danthe1st.arebac.data.commongraph.memory.CommonInMemoryGraph;
 
+/**
+ * The graph of a {@link GraphPattern graph pattern}.
+ * This is a non-attributed directed graph.
+ * @see GPNode
+ * @see GPEdge
+ * @see GraphPattern
+ */
 public record GPGraph(Map<String, GPNode> nodes,
 		Map<GPNode, List<GPEdge>> outgoingEdges,
 		Map<GPNode, List<GPEdge>> incomingEdges) implements CommonInMemoryGraph<GPNode, GPEdge> {

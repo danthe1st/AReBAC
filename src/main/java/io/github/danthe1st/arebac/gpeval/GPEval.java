@@ -12,12 +12,12 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.github.danthe1st.arebac.data.genericdb.GeneralDBEdge;
-import io.github.danthe1st.arebac.data.genericdb.GeneralDBGraph;
-import io.github.danthe1st.arebac.data.genericdb.GeneralDBNode;
-import io.github.danthe1st.arebac.data.graph.AttributeAware;
-import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
-import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.StringAttribute;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeAware;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.StringAttribute;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
@@ -28,14 +28,14 @@ import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusion
 /**
  * Implementation of the GP-eval algorithm.
  *
- * This algorithm finds all assignments in a {@link GeneralDBGraph graph} that match a specified {@link GraphPattern}
+ * This algorithm finds all assignments in a {@link AttributedGraph graph} that match a specified {@link GraphPattern}
  *
  * @param <N> The type of nodes in the graph
  * @param <E> The type of edges in the graph
  */
-public class GPEval<N extends GeneralDBNode, E extends GeneralDBEdge<N>> {
+public class GPEval<N extends AttributedNode, E extends AttributedGraphEdge<N>> {
 
-	private final GeneralDBGraph<N, E> graph;
+	private final AttributedGraph<N, E> graph;
 	private final GraphPattern pattern;
 
 	private final Map<GPNode, Set<GPNode>> mutualExclusionConstraints;
@@ -48,7 +48,7 @@ public class GPEval<N extends GeneralDBNode, E extends GeneralDBEdge<N>> {
 
 	private Set<List<N>> results = new HashSet<>();
 
-	public static <N extends GeneralDBNode, E extends GeneralDBEdge<N>> Set<List<N>> evaluate(GeneralDBGraph<N, E> graph, GraphPattern pattern) {
+	public static <N extends AttributedNode, E extends AttributedGraphEdge<N>> Set<List<N>> evaluate(AttributedGraph<N, E> graph, GraphPattern pattern) {
 		GPEval<N, E> eval = new GPEval<>(graph, pattern);
 		try{
 			eval.init();
@@ -61,7 +61,7 @@ public class GPEval<N extends GeneralDBNode, E extends GeneralDBEdge<N>> {
 		return eval.results;// returns nodes corresponding to returned nodes in graph pattern
 	}
 
-	private GPEval(GeneralDBGraph<N, E> graph, GraphPattern pattern) {
+	private GPEval(AttributedGraph<N, E> graph, GraphPattern pattern) {
 		Objects.requireNonNull(graph);
 		Objects.requireNonNull(pattern);
 		this.graph = graph;
@@ -76,7 +76,7 @@ public class GPEval<N extends GeneralDBNode, E extends GeneralDBEdge<N>> {
 		this.mutualExclusionConstraints = Map.copyOf(mutualExclusionConstraints);
 	}
 
-	private GPEval(GeneralDBGraph<N, E> graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, Set<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results) {
+	private GPEval(AttributedGraph<N, E> graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, Set<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results) {
 		this.graph = graph;
 		this.pattern = pattern;
 		this.mutualExclusionConstraints = mutualExclusionConstraints;
@@ -283,10 +283,10 @@ public class GPEval<N extends GeneralDBNode, E extends GeneralDBEdge<N>> {
 		Function<E, N> neighborFinder;
 		if(relevantEdge.isOutgoing()){
 			graphEdges = graph.findOutgoingEdges(currentNodeInDB);
-			neighborFinder = GeneralDBEdge::target;
+			neighborFinder = AttributedGraphEdge::target;
 		}else{
 			graphEdges = graph.findIncomingEdges(currentNodeInDB);
-			neighborFinder = GeneralDBEdge::source;
+			neighborFinder = AttributedGraphEdge::source;
 		}
 		graphEdges = Objects.requireNonNullElse(graphEdges, List.of());
 		List<N> neighborsSatisfyingRequirements = new ArrayList<>();
@@ -308,12 +308,12 @@ public class GPEval<N extends GeneralDBNode, E extends GeneralDBEdge<N>> {
 	}
 
 	private boolean checkHasNecessaryEdges(GPNode node, N graphNode) {
-		boolean satisfied = checkNecessaryEdgesOneDirection(node, graph.findOutgoingEdges(graphNode), GPGraph::outgoingEdges, GeneralDBEdge::target, GPEdge::target);
+		boolean satisfied = checkNecessaryEdgesOneDirection(node, graph.findOutgoingEdges(graphNode), GPGraph::outgoingEdges, AttributedGraphEdge::target, GPEdge::target);
 		if(!satisfied){
 			return false;
 		}
 
-		return checkNecessaryEdgesOneDirection(node, graph.findIncomingEdges(graphNode), GPGraph::incomingEdges, GeneralDBEdge::source, GPEdge::source);
+		return checkNecessaryEdgesOneDirection(node, graph.findIncomingEdges(graphNode), GPGraph::incomingEdges, AttributedGraphEdge::source, GPEdge::source);
 	}
 
 	private boolean checkNecessaryEdgesOneDirection(GPNode node, List<E> neighboringEdges, Function<GPGraph, Map<GPNode, List<GPEdge>>> gpEdgeDiscovery, Function<E, N> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {

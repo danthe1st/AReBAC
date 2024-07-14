@@ -1,4 +1,4 @@
-package io.github.danthe1st.arebac.data.commongraph;
+package io.github.danthe1st.arebac.data.commongraph.memory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -6,6 +6,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Interface for graphs fully known in memory.
+ *
+ * @param <N> The type of the nodes
+ * @param <E> The type of the edges
+ */
 public interface CommonInMemoryGraph<N extends CommonNode, E extends CommonEdge<N>> {
 	Map<String, N> nodes();
 	

@@ -2,8 +2,13 @@ package io.github.danthe1st.arebac.data.graph_pattern;
 
 import java.util.Objects;
 
-import io.github.danthe1st.arebac.data.commongraph.CommonNode;
+import io.github.danthe1st.arebac.data.commongraph.memory.CommonNode;
 
+/**
+ * A node in a {@link GraphPattern graph pattern}.
+ * @see GPGraph
+ * @see GraphPattern
+ */
 public record GPNode(
 		String id,
 		String nodeType) implements CommonNode {

@@ -1,16 +1,23 @@
 package io.github.danthe1st.arebac.data.graph_pattern.constraints;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
 import io.github.danthe1st.arebac.TypeMissmatchException;
-import io.github.danthe1st.arebac.data.graph.AttributeAware;
-import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
-import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.NumericalAttributeValue;
-import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.StringAttribute;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeAware;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.NumericalAttributeValue;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.StringAttribute;
 
+/**
+ * A constraint on nodes or edges containing a requirement on a specific attribute.
+ *
+ * The attribute is identified by a {@link AttributeRequirement#key} and compared to a {@link AttributeRequirement#value} using an {@link AttributeRequirement#operator}, e.g. <code>someAttribute.someKey <= someValue</code>.
+ */
 public record AttributeRequirement(
+		/**
+		 * Identifies the constraint attribute.
+		 */
 		String key, AttributeRequirementOperator operator, AttributeValue<?> value) {
 
 	public static final String ID_KEY = "#id";
@@ -33,11 +40,10 @@ public record AttributeRequirement(
 	}
 
 	public boolean evaluate(AttributeAware aware) {
-		Map<String, AttributeValue<?>> attributes = aware.attributes();
 		if(ID_KEY.equals(key)){
 			return value.value().equals(aware.id());
 		}
-		AttributeValue<?> attributeValue = attributes.get(key);
+		AttributeValue<?> attributeValue = aware.getAttribute(key);
 		if(attributeValue == null){
 			return false;
 		}

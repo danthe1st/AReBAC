@@ -6,7 +6,18 @@ import java.util.Objects;
 
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusionConstraint;
+import io.github.danthe1st.arebac.gpeval.GPEval;
 
+/**
+ * A graph pattern.
+ *
+ * A graph pattern consists of a graph, nodes of interest (which are returned by {@link GPEval GP-Eval}) and any number of the following constraints:
+ * <ul>
+ * 	<li>Mutual exclusion constraints specifying two nodes must not be the same</li>
+ * 	<li>Node attribute requirements specifying specific nodes must have attributes matching a criterion</li>
+ *  <li>Edge attribute requirements specifying specific edges must have attributes matching a criterion</li>
+ * </ul>
+ */
 public record GraphPattern(
 		GPGraph graph,
 		List<MutualExclusionConstraint> mutualExclusionConstraints,
@@ -14,7 +25,7 @@ public record GraphPattern(
 		Map<GPEdge, List<AttributeRequirement>> edgeRequirements,
 		List<GPNode> returnedNodes) {
 	
-	// TODO category
+	// TODO figure out whether categories are necessary and (if so) add them
 	
 	public GraphPattern {
 		Objects.requireNonNull(graph);

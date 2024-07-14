@@ -1,9 +1,16 @@
-package io.github.danthe1st.arebac.data.graph_pattern;
+package io.github.danthe1st.arebac.data.commongraph.attributed;
 
 import java.util.Objects;
 
 import io.github.danthe1st.arebac.TypeMissmatchException;
 
+/**
+ * Holds a value of an attribute in an attributed graph.
+ * @see StringAttribute
+ * @see BooleanAttribute
+ * @see IntAttribute
+ * @param <T> The type of the value
+ */
 public sealed interface AttributeValue<T> {
 
 	T value();
