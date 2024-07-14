@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public interface CommonGraph<N extends CommonNode, E extends CommonEdge<N>> {
+public interface CommonInMemoryGraph<N extends CommonNode, E extends CommonEdge<N>> {
 	Map<String, N> nodes();
 	
 	Map<N, List<E>> outgoingEdges();

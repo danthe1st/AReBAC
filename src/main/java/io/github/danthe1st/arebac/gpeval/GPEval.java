@@ -12,10 +12,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.github.danthe1st.arebac.data.genericdb.GeneralDBEdge;
+import io.github.danthe1st.arebac.data.genericdb.GeneralDBGraph;
+import io.github.danthe1st.arebac.data.genericdb.GeneralDBNode;
 import io.github.danthe1st.arebac.data.graph.AttributeAware;
-import io.github.danthe1st.arebac.data.graph.Graph;
-import io.github.danthe1st.arebac.data.graph.GraphEdge;
-import io.github.danthe1st.arebac.data.graph.GraphNode;
 import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue;
 import io.github.danthe1st.arebac.data.graph_pattern.AttributeValue.StringAttribute;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
@@ -25,23 +25,31 @@ import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusionConstraint;
 
-public class GPEval {
+/**
+ * Implementation of the GP-eval algorithm.
+ *
+ * This algorithm finds all assignments in a {@link GeneralDBGraph graph} that match a specified {@link GraphPattern}
+ *
+ * @param <N> The type of nodes in the graph
+ * @param <E> The type of edges in the graph
+ */
+public class GPEval<N extends GeneralDBNode, E extends GeneralDBEdge<N>> {
 
-	private final Graph graph;
+	private final GeneralDBGraph<N, E> graph;
 	private final GraphPattern pattern;
 
 	private final Map<GPNode, Set<GPNode>> mutualExclusionConstraints;
 
 	// node in pattern -> list of nodes in graph
-	private Map<GPNode, Set<GraphNode>> candidates = new HashMap<>();
+	private Map<GPNode, Set<N>> candidates = new HashMap<>();
 
 	// node in pattern -> node in graph
-	private Map<GPNode, GraphNode> assignments = new HashMap<>();
+	private Map<GPNode, N> assignments = new HashMap<>();
 
-	private Set<List<GraphNode>> results = new HashSet<>();
+	private Set<List<N>> results = new HashSet<>();
 
-	public static Set<List<GraphNode>> evaluate(Graph graph, GraphPattern pattern) {
-		GPEval eval = new GPEval(graph, pattern);
+	public static <N extends GeneralDBNode, E extends GeneralDBEdge<N>> Set<List<N>> evaluate(GeneralDBGraph<N, E> graph, GraphPattern pattern) {
+		GPEval<N, E> eval = new GPEval<>(graph, pattern);
 		try{
 			eval.init();
 		}catch(NoResultException e){
@@ -53,7 +61,7 @@ public class GPEval {
 		return eval.results;// returns nodes corresponding to returned nodes in graph pattern
 	}
 
-	private GPEval(Graph graph, GraphPattern pattern) {
+	private GPEval(GeneralDBGraph<N, E> graph, GraphPattern pattern) {
 		Objects.requireNonNull(graph);
 		Objects.requireNonNull(pattern);
 		this.graph = graph;
@@ -68,7 +76,7 @@ public class GPEval {
 		this.mutualExclusionConstraints = Map.copyOf(mutualExclusionConstraints);
 	}
 
-	public GPEval(Graph graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, Set<GraphNode>> candidates, Map<GPNode, GraphNode> assignments, Set<List<GraphNode>> results) {
+	private GPEval(GeneralDBGraph<N, E> graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, Set<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results) {
 		this.graph = graph;
 		this.pattern = pattern;
 		this.mutualExclusionConstraints = mutualExclusionConstraints;
@@ -96,10 +104,11 @@ public class GPEval {
 			for(AttributeRequirement requirement : requirements){
 				if(AttributeRequirement.ID_KEY.equals(requirement.key())){
 					AttributeValue<?> requirementValue = requirement.value();
-					if(!(requirementValue instanceof StringAttribute)){
+					if(!(requirementValue instanceof StringAttribute sa)){
 						throw new IllegalStateException("ID requirements must be strings");
 					}
-					GraphNode graphNode = graph.nodes().get(requirementValue.value());
+					N graphNode = graph.findNodeById(sa.value());
+
 					if(graphNode == null){
 						throw new NoResultException("Fixed node cannot be found");
 					}
@@ -110,11 +119,11 @@ public class GPEval {
 	}
 
 	private void checkRequirementsForFixedVertices() throws NoResultException {
-		for(Map.Entry<GPNode, Set<GraphNode>> assignedNodeEntry : candidates.entrySet()){
+		for(Map.Entry<GPNode, Set<N>> assignedNodeEntry : candidates.entrySet()){
 			GPNode patternNode = assignedNodeEntry.getKey();
-			Set<GraphNode> graphNodes = assignedNodeEntry.getValue();
-			for(Iterator<GraphNode> graphNodeIterator = graphNodes.iterator(); graphNodeIterator.hasNext();){
-				GraphNode graphNode = graphNodeIterator.next();
+			Set<N> graphNodes = assignedNodeEntry.getValue();
+			for(Iterator<N> graphNodeIterator = graphNodes.iterator(); graphNodeIterator.hasNext();){
+				N graphNode = graphNodeIterator.next();
 				if(!checkRequirementsForNode(patternNode, graphNode)){
 					graphNodeIterator.remove();
 				}
@@ -125,7 +134,7 @@ public class GPEval {
 		}
 	}
 
-	private boolean checkRequirementsForNode(GPNode patternNode, GraphNode graphNode) {
+	private boolean checkRequirementsForNode(GPNode patternNode, N graphNode) {
 		for(AttributeRequirement requirement : pattern.nodeRequirements().get(patternNode)){
 			if(!requirement.evaluate(graphNode)){
 				return false;
@@ -137,7 +146,7 @@ public class GPEval {
 	private Set<GPNode> run(Map<GPNode, Set<GPNode>> incomingConflicts) {// returns nodes for backjumping
 		if(assignments.size() == pattern.graph().nodes().size()){
 
-			List<GraphNode> result = new ArrayList<>();
+			List<N> result = new ArrayList<>();
 			for(GPNode nodeToReturn : pattern.returnedNodes()){
 				result.add(Objects.requireNonNull(assignments.get(nodeToReturn)));
 			}
@@ -151,15 +160,15 @@ public class GPEval {
 		Set<GPNode> outgoingConflicts = new HashSet<>();
 
 		GPNode currentNode = pickNextNode();
-		Set<GraphNode> currentNodeCandidates = candidates.get(currentNode);
+		Set<N> currentNodeCandidates = candidates.get(currentNode);
 		Set<GPNode> exclusionConstraints = mutualExclusionConstraints.get(currentNode);
 		if(exclusionConstraints != null){
 			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, incomingConflicts.get(currentNode));
 		}
-		for(GraphNode candidateNode : currentNodeCandidates){
-			Map<GPNode, Set<GraphNode>> newCandidates = new HashMap<>(candidates);
+		for(N candidateNode : currentNodeCandidates){
+			Map<GPNode, Set<N>> newCandidates = new HashMap<>(candidates);
 			newCandidates.remove(currentNode);
-			Map<GPNode, GraphNode> newAssignments = new HashMap<>(assignments);
+			Map<GPNode, N> newAssignments = new HashMap<>(assignments);
 			newAssignments.put(currentNode, candidateNode);
 			Map<GPNode, Set<GPNode>> newIncomingConflicts = incomingConflicts// deep copy
 				.entrySet()
@@ -170,7 +179,7 @@ public class GPEval {
 								e -> new HashSet<>(e.getValue())
 						)
 				);
-			GPEval child = new GPEval(graph, pattern, mutualExclusionConstraints, newCandidates, newAssignments, results);
+			GPEval<N, E> child = new GPEval<>(graph, pattern, mutualExclusionConstraints, newCandidates, newAssignments, results);
 			boolean valid = child.forwardChecking(currentNode, newIncomingConflicts, outgoingConflicts);
 			if(valid){
 				deadEnd = false;
@@ -212,7 +221,7 @@ public class GPEval {
 	private GPNode pickNextNode() {
 		GPNode candidate = null;
 		int numberOfPossibilities = Integer.MAX_VALUE;
-		for(Entry<GPNode, Set<GraphNode>> candidateEntry : candidates.entrySet()){
+		for(Entry<GPNode, Set<N>> candidateEntry : candidates.entrySet()){
 			int possibilities = candidateEntry.getValue().size();
 			GPNode potentialCandidate = candidateEntry.getKey();
 			if(assignments.containsKey(potentialCandidate)){
@@ -226,9 +235,9 @@ public class GPEval {
 		return candidate;
 	}
 
-	private void filterMutualExclusionConstraints(Set<GraphNode> candidatesForNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts) {
-		for(Iterator<GraphNode> it = candidatesForNode.iterator(); it.hasNext();){
-			GraphNode graphCandidate = it.next();
+	private void filterMutualExclusionConstraints(Set<N> candidatesForNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts) {
+		for(Iterator<N> it = candidatesForNode.iterator(); it.hasNext();){
+			N graphCandidate = it.next();
 			for(GPNode exclusionConstraint : exclusionConstraints){
 				if(graphCandidate.equals(assignments.get(exclusionConstraint))){
 					incomingConflicts.add(exclusionConstraint);
@@ -243,8 +252,8 @@ public class GPEval {
 		for(RelevantEdge relevantEdge : relevantEdges){
 			GPNode otherNode = relevantEdge.otherNode();
 			if(!assignments.containsKey(otherNode)){
-				List<GraphNode> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge);
-				Set<GraphNode> otherNodeCandidates = candidates.get(otherNode);
+				List<N> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge);
+				Set<N> otherNodeCandidates = candidates.get(otherNode);
 				assert otherNodeCandidates == null || !otherNodeCandidates.isEmpty();// I think this shouldn't happen, null is written as empty in the paper
 				Set<GPNode> otherNodeIncomingConflicts = incomingConflicts.computeIfAbsent(otherNode, n -> new HashSet<>());
 				Set<GPNode> currentNodeIncomingConflicts = incomingConflicts.computeIfAbsent(currentNode, n -> new HashSet<>());
@@ -268,21 +277,21 @@ public class GPEval {
 		return true;
 	}
 
-	private List<GraphNode> getNeighborsSatisfyingEdgeAndAttributeRequirements(GPNode currentNode, RelevantEdge relevantEdge) {
-		GraphNode currentNodeInDB = assignments.get(currentNode);
-		List<GraphEdge> graphEdges;
-		Function<GraphEdge, GraphNode> neighborFinder;
+	private List<N> getNeighborsSatisfyingEdgeAndAttributeRequirements(GPNode currentNode, RelevantEdge relevantEdge) {
+		N currentNodeInDB = assignments.get(currentNode);
+		List<E> graphEdges;
+		Function<E, N> neighborFinder;
 		if(relevantEdge.isOutgoing()){
-			graphEdges = graph.outgoingEdges().get(currentNodeInDB);
-			neighborFinder = GraphEdge::target;
+			graphEdges = graph.findOutgoingEdges(currentNodeInDB);
+			neighborFinder = GeneralDBEdge::target;
 		}else{
-			graphEdges = graph.incomingEdges().get(currentNodeInDB);
-			neighborFinder = GraphEdge::source;
+			graphEdges = graph.findIncomingEdges(currentNodeInDB);
+			neighborFinder = GeneralDBEdge::source;
 		}
 		graphEdges = Objects.requireNonNullElse(graphEdges, List.of());
-		List<GraphNode> neighborsSatisfyingRequirements = new ArrayList<>();
-		for(GraphEdge graphEdge : graphEdges){
-			GraphNode neighbor = neighborFinder.apply(graphEdge);
+		List<N> neighborsSatisfyingRequirements = new ArrayList<>();
+		for(E graphEdge : graphEdges){
+			N neighbor = neighborFinder.apply(graphEdge);
 			if(satisfiesRequirements(relevantEdge, graphEdge, neighbor)){
 				neighborsSatisfyingRequirements.add(neighbor);
 			}
@@ -290,7 +299,7 @@ public class GPEval {
 		return neighborsSatisfyingRequirements;
 	}
 
-	private boolean satisfiesRequirements(RelevantEdge currentEdge, GraphEdge graphEdge, GraphNode neighbor) {
+	private boolean satisfiesRequirements(RelevantEdge currentEdge, E graphEdge, N neighbor) {
 		return currentEdge.edge.edgeType().equals(graphEdge.edgeType()) &&
 				currentEdge.otherNode.nodeType().equals(neighbor.nodeType()) &&
 				checkAttributeRequirements(pattern.edgeRequirements().get(currentEdge.edge), graphEdge) &&
@@ -298,21 +307,21 @@ public class GPEval {
 				checkHasNecessaryEdges(currentEdge.otherNode, neighbor);
 	}
 
-	private boolean checkHasNecessaryEdges(GPNode node, GraphNode graphNode) {
-		boolean satisfied = checkNecessaryEdgesOneDirection(node, graphNode, Graph::outgoingEdges, GPGraph::outgoingEdges, GraphEdge::target, GPEdge::target);
+	private boolean checkHasNecessaryEdges(GPNode node, N graphNode) {
+		boolean satisfied = checkNecessaryEdgesOneDirection(node, graph.findOutgoingEdges(graphNode), GPGraph::outgoingEdges, GeneralDBEdge::target, GPEdge::target);
 		if(!satisfied){
 			return false;
 		}
 
-		return checkNecessaryEdgesOneDirection(node, graphNode, Graph::incomingEdges, GPGraph::incomingEdges, GraphEdge::source, GPEdge::source);
+		return checkNecessaryEdgesOneDirection(node, graph.findIncomingEdges(graphNode), GPGraph::incomingEdges, GeneralDBEdge::source, GPEdge::source);
 	}
 
-	private boolean checkNecessaryEdgesOneDirection(GPNode node, GraphNode graphNode, Function<Graph, Map<GraphNode, List<GraphEdge>>> edgeDiscovery, Function<GPGraph, Map<GPNode, List<GPEdge>>> gpEdgeDiscovery, Function<GraphEdge, GraphNode> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {
+	private boolean checkNecessaryEdgesOneDirection(GPNode node, List<E> neighboringEdges, Function<GPGraph, Map<GPNode, List<GPEdge>>> gpEdgeDiscovery, Function<E, N> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {
 		for(GPEdge edge : Objects.requireNonNullElse(gpEdgeDiscovery.apply(pattern.graph()).get(node), List.<GPEdge>of())){
 			boolean isSatisfied = false;
 			GPNode otherNode = gpOtherNodeFinder.apply(edge);
-			GraphNode otherGraphNode = assignments.get(otherNode);
-			for(GraphEdge graphEdge : edgeDiscovery.apply(graph).get(graphNode)){
+			N otherGraphNode = assignments.get(otherNode);
+			for(E graphEdge : neighboringEdges){
 				if(edge.edgeType().equals(graphEdge.edgeType()) && (otherGraphNode == null || edgeOtherNodeFinder.apply(graphEdge).equals(otherGraphNode))){
 					isSatisfied = true;
 				}

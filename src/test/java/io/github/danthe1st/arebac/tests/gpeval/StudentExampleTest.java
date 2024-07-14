@@ -1,4 +1,4 @@
-package io.github.danthe1st.arebac.tests;
+package io.github.danthe1st.arebac.tests.gpeval;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

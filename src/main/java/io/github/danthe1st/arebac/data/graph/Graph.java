@@ -6,11 +6,12 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.github.danthe1st.arebac.data.commongraph.CommonGraph;
+import io.github.danthe1st.arebac.data.commongraph.CommonInMemoryGraph;
+import io.github.danthe1st.arebac.data.genericdb.GeneralDBGraph;
 
 public record Graph(Map<String, GraphNode> nodes,
 		Map<GraphNode, List<GraphEdge>> outgoingEdges,
-		Map<GraphNode, List<GraphEdge>> incomingEdges) implements CommonGraph<GraphNode, GraphEdge> {
+		Map<GraphNode, List<GraphEdge>> incomingEdges) implements CommonInMemoryGraph<GraphNode, GraphEdge>, GeneralDBGraph<GraphNode, GraphEdge> {
 
 	public Graph(List<GraphNode> nodes, List<GraphEdge> edges) {
 		this(
@@ -29,6 +30,21 @@ public record Graph(Map<String, GraphNode> nodes,
 		outgoingEdges = Map.copyOf(outgoingEdges);
 		incomingEdges = Map.copyOf(incomingEdges);
 		
-		CommonGraph.validate(nodes, outgoingEdges, incomingEdges);
+		CommonInMemoryGraph.validate(nodes, outgoingEdges, incomingEdges);
+	}
+	
+	@Override
+	public GraphNode findNodeById(String id) {
+		return nodes().get(id);
+	}
+	
+	@Override
+	public List<GraphEdge> findOutgoingEdges(GraphNode node) {
+		return Objects.requireNonNullElse(outgoingEdges().get(node), List.of());
+	}
+	
+	@Override
+	public List<GraphEdge> findIncomingEdges(GraphNode node) {
+		return Objects.requireNonNullElse(incomingEdges().get(node), List.of());
 	}
 }
