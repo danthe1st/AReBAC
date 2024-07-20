@@ -65,14 +65,14 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		Objects.requireNonNull(pattern);
 		this.graph = graph;
 		this.pattern = pattern;
-		Map<GPNode, Set<GPNode>> mutualExclusionConstraints = new HashMap<>();
+		Map<GPNode, Set<GPNode>> exclusionConstraints = new HashMap<>();
 		for(MutualExclusionConstraint constraint : pattern.mutualExclusionConstraints()){
 			GPNode first = constraint.first();
 			GPNode second = constraint.second();
-			addToMultimap(mutualExclusionConstraints, first, second);
-			addToMultimap(mutualExclusionConstraints, second, first);
+			addToMultimap(exclusionConstraints, first, second);
+			addToMultimap(exclusionConstraints, second, first);
 		}
-		this.mutualExclusionConstraints = Map.copyOf(mutualExclusionConstraints);
+		this.mutualExclusionConstraints = Map.copyOf(exclusionConstraints);
 	}
 
 	private GPEval(AttributedGraph<N, E> graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, Set<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results) {
@@ -103,10 +103,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			for(AttributeRequirement requirement : requirements){
 				if(AttributeRequirement.ID_KEY.equals(requirement.key())){
 					AttributeValue<?> requirementValue = requirement.value();
-					if(!(requirementValue instanceof StringAttribute sa)){
+					if(!(requirementValue instanceof StringAttribute(String value))){
 						throw new IllegalStateException("ID requirements must be strings");
 					}
-					N graphNode = graph.findNodeById(sa.value());
+					N graphNode = graph.findNodeById(value);
 
 					if(graphNode == null){
 						throw new NoResultException("Fixed node cannot be found");
@@ -224,8 +224,9 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			int possibilities = candidateEntry.getValue().size();
 			GPNode potentialCandidate = candidateEntry.getKey();
 			if(assignments.containsKey(potentialCandidate)){
-				System.err.println("WARNING: element of candidate set already assigned");
-			}else if(possibilities < numberOfPossibilities){
+				throw new IllegalStateException("sanity check failed: element of candidate set already assigned");
+			}
+			if(possibilities < numberOfPossibilities){
 				candidate = potentialCandidate;
 				numberOfPossibilities = possibilities;
 			}
