@@ -19,7 +19,6 @@ import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
-import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
@@ -308,16 +307,22 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	}
 
 	private boolean checkHasNecessaryEdges(GPNode node, N graphNode) {
-		boolean satisfied = checkNecessaryEdgesOneDirection(node, graph.findOutgoingEdges(graphNode), GPGraph::outgoingEdges, AttributedGraphEdge::target, GPEdge::target);
+		boolean satisfied = checkNecessaryEdgesOneDirection(
+				graph.findOutgoingEdges(graphNode), pattern.graph().outgoingEdges().get(node),
+				AttributedGraphEdge::target, GPEdge::target
+		);
 		if(!satisfied){
 			return false;
 		}
 
-		return checkNecessaryEdgesOneDirection(node, graph.findIncomingEdges(graphNode), GPGraph::incomingEdges, AttributedGraphEdge::source, GPEdge::source);
+		return checkNecessaryEdgesOneDirection(
+				graph.findIncomingEdges(graphNode), pattern.graph().incomingEdges().get(node),
+				AttributedGraphEdge::source, GPEdge::source
+		);
 	}
 
-	private boolean checkNecessaryEdgesOneDirection(GPNode node, List<E> neighboringEdges, Function<GPGraph, Map<GPNode, List<GPEdge>>> gpEdgeDiscovery, Function<E, N> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {
-		for(GPEdge edge : Objects.requireNonNullElse(gpEdgeDiscovery.apply(pattern.graph()).get(node), List.<GPEdge>of())){
+	private boolean checkNecessaryEdgesOneDirection(List<E> neighboringEdges, List<GPEdge> patternEdges, Function<E, N> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {
+		for(GPEdge edge : Objects.requireNonNullElse(patternEdges, List.<GPEdge>of())){
 			boolean isSatisfied = false;
 			GPNode otherNode = gpOtherNodeFinder.apply(edge);
 			N otherGraphNode = assignments.get(otherNode);
