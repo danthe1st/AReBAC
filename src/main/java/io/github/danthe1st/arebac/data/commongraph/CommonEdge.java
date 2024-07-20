@@ -1,4 +1,4 @@
-package io.github.danthe1st.arebac.data.commongraph.memory;
+package io.github.danthe1st.arebac.data.commongraph;
 
 /**
  * An edge in a (directed) graph.

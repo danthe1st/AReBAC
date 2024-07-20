@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import io.github.danthe1st.arebac.data.commongraph.CommonEdge;
+import io.github.danthe1st.arebac.data.commongraph.CommonNode;
+
 /**
  * Interface for graphs fully known in memory.
  *

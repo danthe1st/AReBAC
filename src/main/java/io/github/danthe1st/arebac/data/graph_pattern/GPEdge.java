@@ -2,7 +2,7 @@ package io.github.danthe1st.arebac.data.graph_pattern;
 
 import java.util.Objects;
 
-import io.github.danthe1st.arebac.data.commongraph.memory.CommonEdge;
+import io.github.danthe1st.arebac.data.commongraph.CommonEdge;
 
 /**
  * An edge in a {@link GraphPattern graph pattern}.

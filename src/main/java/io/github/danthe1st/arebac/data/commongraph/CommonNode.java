@@ -1,4 +1,4 @@
-package io.github.danthe1st.arebac.data.commongraph.memory;
+package io.github.danthe1st.arebac.data.commongraph;
 
 /**
  * Interface for nodes in a graph.

@@ -1,6 +1,6 @@
 package io.github.danthe1st.arebac.data.commongraph.attributed;
 
-import io.github.danthe1st.arebac.data.commongraph.memory.CommonEdge;
+import io.github.danthe1st.arebac.data.commongraph.CommonEdge;
 
 /**
  * An edge in an {@link AttributedGraph attributed graph}.
