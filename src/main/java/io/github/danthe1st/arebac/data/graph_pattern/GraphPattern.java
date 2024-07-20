@@ -23,7 +23,8 @@ public record GraphPattern(
 		List<MutualExclusionConstraint> mutualExclusionConstraints,
 		Map<GPNode, List<AttributeRequirement>> nodeRequirements,
 		Map<GPEdge, List<AttributeRequirement>> edgeRequirements,
-		List<GPNode> returnedNodes) {
+		List<GPNode> returnedNodes,
+		Map<String, GPNode> actorsToNodes) {
 	
 	// TODO figure out whether categories are necessary and (if so) add them
 	
@@ -32,11 +33,14 @@ public record GraphPattern(
 		Objects.requireNonNull(mutualExclusionConstraints);
 		Objects.requireNonNull(nodeRequirements);
 		Objects.requireNonNull(edgeRequirements);
+		Objects.requireNonNull(returnedNodes);
+		Objects.requireNonNull(actorsToNodes);
 		
 		mutualExclusionConstraints = List.copyOf(mutualExclusionConstraints);
 		nodeRequirements = Map.copyOf(nodeRequirements);
 		edgeRequirements = Map.copyOf(edgeRequirements);
 		returnedNodes = List.copyOf(returnedNodes);
+		actorsToNodes = Map.copyOf(actorsToNodes);
 		
 		for(GPNode node : returnedNodes){
 			checkGraphHasNode(graph, node);
@@ -50,6 +54,9 @@ public record GraphPattern(
 		for(MutualExclusionConstraint mutualExclusionConstraint : mutualExclusionConstraints){
 			checkGraphHasNode(graph, mutualExclusionConstraint.first());
 			checkGraphHasNode(graph, mutualExclusionConstraint.second());
+		}
+		for(GPNode node : actorsToNodes.values()){
+			checkGraphHasNode(graph, node);
 		}
 	}
 	

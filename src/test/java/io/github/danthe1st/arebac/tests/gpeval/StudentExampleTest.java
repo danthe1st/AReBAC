@@ -44,7 +44,8 @@ class StudentExampleTest {
 				Map.of(
 						attendCourse, List.of(new AttributeRequirement("grade", AttributeRequirementOperator.LESS_THAN, new AttributeValue.IntAttribute(5)))
 				),
-				List.of(course)
+				List.of(course),
+				Map.of("course", course)// not needed for GP-Eval
 		);
 	}
 	
