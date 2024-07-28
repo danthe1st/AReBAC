@@ -1,6 +1,7 @@
 package io.github.danthe1st.arebac.data.graph_pattern;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import io.github.danthe1st.arebac.data.commongraph.CommonEdge;
 
@@ -15,7 +16,9 @@ public record GPEdge(
 	public GPEdge {
 		Objects.requireNonNull(source);
 		Objects.requireNonNull(target);
-		Objects.requireNonNull(id);
+		if(id == null){
+			id = UUID.randomUUID().toString();
+		}
 		Objects.requireNonNull(edgeType);
 	}
 }

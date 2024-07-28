@@ -29,19 +29,20 @@ public sealed interface AttributeValue<T> {
 		public BooleanAttribute {
 			Objects.requireNonNull(boolValue);
 		}
-		
+
 		@Override
 		public Boolean value() {
 			return boolValue;
 		}
 	}
-	
+
 	public record IntAttribute(int intValue) implements NumericalAttributeValue<Integer> {
 
 		@Override
 		public boolean lessThan(AttributeValue<?> other) {
 			return switch(other) {
 			case StringAttribute attr -> throw new TypeMissmatchException(NumericalAttributeValue.class, attr);
+			case BooleanAttribute attr -> throw new TypeMissmatchException(NumericalAttributeValue.class, attr);
 			case IntAttribute(int o) -> value() < o;
 			};
 		}
@@ -51,11 +52,11 @@ public sealed interface AttributeValue<T> {
 			return intValue;
 		}
 	}
-	
+
 	static IntAttribute attribute(int value) {
 		return new IntAttribute(value);
 	}
-	
+
 	static StringAttribute attribute(String value) {
 		return new StringAttribute(value);
 	}

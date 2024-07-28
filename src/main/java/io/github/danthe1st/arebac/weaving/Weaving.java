@@ -97,7 +97,11 @@ public final class Weaving {
 				GPNode requiredNode = oldRequirementEntry.getKey();
 				List<AttributeRequirement> attributeConstraints = oldRequirementEntry.getValue();
 				GPNode newNode = convertNode(patternId, requiredNode);
-				nodeRequirements.put(newNode, attributeConstraints);
+				nodeRequirements.merge(newNode, attributeConstraints, (a,b) -> {
+					List<AttributeRequirement> merged = new ArrayList<>(a);
+					merged.addAll(b);
+					return merged;
+				});
 			}
 		}
 		return nodeRequirements;
