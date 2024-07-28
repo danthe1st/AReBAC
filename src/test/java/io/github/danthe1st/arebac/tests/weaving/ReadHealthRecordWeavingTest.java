@@ -16,7 +16,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequir
 import io.github.danthe1st.arebac.weaving.Weaving;
 import org.junit.jupiter.api.Test;
 
-//example 12-14 from the paper
+//example 12-14 from https://doi.org/10.1145/3401027
 class ReadHealthRecordWeavingTest {
 
 	@Test
@@ -83,7 +83,7 @@ class ReadHealthRecordWeavingTest {
 		);
 	}
 
-	// example 9 from the paper
+	// example 9 from https://doi.org/10.1145/3401027
 	private GraphPattern createQueryPattern() {
 		GPNode requestor = new GPNode("requestor", "user");
 		GPNode patient = new GPNode("patient", "user");
