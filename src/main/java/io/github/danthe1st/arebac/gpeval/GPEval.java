@@ -162,7 +162,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		Set<N> currentNodeCandidates = candidates.get(currentNode);
 		Set<GPNode> exclusionConstraints = mutualExclusionConstraints.get(currentNode);
 		if(exclusionConstraints != null){
-			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, incomingConflicts.get(currentNode));
+			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, Objects.requireNonNullElse(incomingConflicts.get(currentNode), new HashSet<>()));
 		}
 		for(N candidateNode : currentNodeCandidates){
 			Map<GPNode, Set<N>> newCandidates = new HashMap<>(candidates);
