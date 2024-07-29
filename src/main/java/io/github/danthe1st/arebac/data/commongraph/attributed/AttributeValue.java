@@ -60,4 +60,8 @@ public sealed interface AttributeValue<T> {
 	static StringAttribute attribute(String value) {
 		return new StringAttribute(value);
 	}
+	
+	static BooleanAttribute attribute(boolean value) {
+		return new BooleanAttribute(value);
+	}
 }
