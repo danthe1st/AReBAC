@@ -2,6 +2,7 @@ package io.github.danthe1st.arebac.data.graph_pattern;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -34,9 +35,18 @@ public record GPGraph(Map<String, GPNode> nodes,
 		Objects.requireNonNull(incomingEdges);
 
 		nodes = Map.copyOf(nodes);
-		outgoingEdges = Map.copyOf(outgoingEdges);
-		incomingEdges = Map.copyOf(incomingEdges);
+		outgoingEdges = copy(outgoingEdges);
+		incomingEdges = copy(incomingEdges);
 
 		CommonInMemoryGraph.validate(nodes, outgoingEdges, incomingEdges);
+	}
+	
+	private static Map<GPNode, Collection<GPEdge>> copy(Map<GPNode, Collection<GPEdge>> data) {
+		Map<GPNode, Collection<GPEdge>> copy = data
+			.entrySet()
+			.stream()
+			.map(e -> Map.entry(e.getKey(), List.copyOf(e.getValue())))
+			.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+		return Map.copyOf(copy);
 	}
 }

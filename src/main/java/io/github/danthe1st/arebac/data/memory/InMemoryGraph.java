@@ -34,10 +34,19 @@ public record InMemoryGraph(Map<String, InMemoryGraphNode> nodes,
 		Objects.requireNonNull(incomingEdges);
 
 		nodes = Map.copyOf(nodes);
-		outgoingEdges = Map.copyOf(outgoingEdges);
-		incomingEdges = Map.copyOf(incomingEdges);
+		outgoingEdges = copy(outgoingEdges);
+		incomingEdges = copy(incomingEdges);
 		
 		CommonInMemoryGraph.validate(nodes, outgoingEdges, incomingEdges);
+	}
+	
+	private static Map<InMemoryGraphNode, List<InMemoryGraphEdge>> copy(Map<InMemoryGraphNode, List<InMemoryGraphEdge>> data) {
+		Map<InMemoryGraphNode, List<InMemoryGraphEdge>> copy = data
+			.entrySet()
+			.stream()
+			.map(e -> Map.entry(e.getKey(), List.copyOf(e.getValue())))
+			.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+		return Map.copyOf(copy);
 	}
 	
 	@Override
