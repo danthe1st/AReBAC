@@ -1,6 +1,6 @@
 package io.github.danthe1st.arebac.data.commongraph.attributed;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Interface for attributed graphs.
@@ -12,6 +12,6 @@ import java.util.List;
 public interface AttributedGraph<N extends AttributedNode, E extends AttributedGraphEdge<N>> {
 	N findNodeById(String id);
 	
-	List<E> findOutgoingEdges(N node);
-	List<E> findIncomingEdges(N node);
+	Collection<E> findOutgoingEdges(N node);
+	Collection<E> findIncomingEdges(N node);
 }

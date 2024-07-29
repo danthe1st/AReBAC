@@ -1,5 +1,6 @@
 package io.github.danthe1st.arebac.data.graph_pattern;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,7 +69,7 @@ public record GraphPattern(
 	}
 	
 	private static void checkGraphHasEdge(GPGraph graph, GPEdge edge) {
-		List<GPEdge> edges = graph.outgoingEdges().get(edge.source());
+		Collection<GPEdge> edges = graph.outgoingEdges().get(edge.source());
 		if(edges == null){
 			throw new IllegalArgumentException("edge missing in graph: " + edge);
 		}

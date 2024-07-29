@@ -1,8 +1,10 @@
 package io.github.danthe1st.arebac.data.memory;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,12 +46,12 @@ public record InMemoryGraph(Map<String, InMemoryGraphNode> nodes,
 	}
 	
 	@Override
-	public List<InMemoryGraphEdge> findOutgoingEdges(InMemoryGraphNode node) {
-		return Objects.requireNonNullElse(outgoingEdges().get(node), List.of());
+	public Collection<InMemoryGraphEdge> findOutgoingEdges(InMemoryGraphNode node) {
+		return Objects.requireNonNullElse(outgoingEdges().get(node), Set.of());
 	}
 	
 	@Override
-	public List<InMemoryGraphEdge> findIncomingEdges(InMemoryGraphNode node) {
-		return Objects.requireNonNullElse(incomingEdges().get(node), List.of());
+	public Collection<InMemoryGraphEdge> findIncomingEdges(InMemoryGraphNode node) {
+		return Objects.requireNonNullElse(incomingEdges().get(node), Set.of());
 	}
 }

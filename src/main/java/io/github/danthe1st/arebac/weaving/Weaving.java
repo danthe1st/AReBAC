@@ -1,6 +1,7 @@
 package io.github.danthe1st.arebac.weaving;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -77,7 +78,7 @@ public final class Weaving {
 		LinkedHashMap<EdgeInGraphPattern, GPEdge> oldToNewEdges = new LinkedHashMap<>();
 		for(int patternId = 0; patternId < inputPatterns.size(); patternId++){
 			GraphPattern graphPattern = inputPatterns.get(patternId);
-			for(List<GPEdge> edgesOfNode : graphPattern.graph().incomingEdges().values()){
+			for(Collection<GPEdge> edgesOfNode : graphPattern.graph().incomingEdges().values()){
 				for(GPEdge oldEdgeInPattern : edgesOfNode){
 					EdgeInGraphPattern edgeInPattern = new EdgeInGraphPattern(patternId, oldEdgeInPattern);
 					GPEdge newEdge = convertEdge(edgeInPattern);

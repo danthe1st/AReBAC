@@ -5,6 +5,7 @@ import static io.github.danthe1st.arebac.data.graph_pattern.constraints.Attribut
 import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator.EQUAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,7 +105,7 @@ class FriendOfFriendEvaluateTest {
 		Set<List<InMemoryGraphNode>> result = GPEval.evaluate(graph, pattern);
 		assertEquals(Set.of(List.of(connectorFriend)), result);
 	}
-	
+
 	@Test
 	void evaluateConnector() {
 		GraphPattern pattern = createFriendOfFriendPattern(connector.id());
@@ -118,7 +119,7 @@ class FriendOfFriendEvaluateTest {
 		Set<List<InMemoryGraphNode>> result = GPEval.evaluate(graph, pattern);
 		assertEquals(Set.of(), result);
 	}
-	
+
 	@Test
 	void evaluateCompletor() {
 		GraphPattern pattern = createFriendOfFriendPattern(triangleCompletor.id());
@@ -132,7 +133,7 @@ class FriendOfFriendEvaluateTest {
 		Set<List<InMemoryGraphNode>> result = GPEval.evaluate(graph, pattern);
 		assertEquals(Set.of(List.of(connectorFriend)), result);
 	}
-	
+
 	// adaptation from example 17 of https://doi.org/10.1145/3401027
 	private GraphPattern createFriendOfFriendPattern(String requestorId) {
 		GPNode requestor = new GPNode("requestor", USER_NODE_TYPE);
@@ -154,7 +155,7 @@ class FriendOfFriendEvaluateTest {
 				Map.of("requestor", requestor, FRIEND_EDGE_TYPE, friend, "friendOfFriend", friendOfFriend)
 		);
 	}
-	
+
 	private GraphPattern createGoodFriendOfFriendRequirement(String requestorId) {
 		GraphPattern friendOfFriendPattern = createFriendOfFriendPattern(requestorId);
 		Map<GPEdge, List<AttributeRequirement>> newEdgeRequirements =
@@ -163,7 +164,7 @@ class FriendOfFriendEvaluateTest {
 				.outgoingEdges()
 				.values()
 				.stream()
-				.flatMap(List::stream)
+					.flatMap(Collection::stream)
 					.collect(Collectors.toMap(e -> e, e -> List.of(new AttributeRequirement(GOOD_FRIEND_EDGE_ATTRIBUTE, EQUAL, attribute(true)))));
 		return new GraphPattern(friendOfFriendPattern.graph(), friendOfFriendPattern.mutualExclusionConstraints(), friendOfFriendPattern.nodeRequirements(), newEdgeRequirements, friendOfFriendPattern.returnedNodes(), friendOfFriendPattern.actorsToNodes());
 	}

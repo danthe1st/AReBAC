@@ -1,6 +1,7 @@
 package io.github.danthe1st.arebac.gpeval;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -279,7 +280,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 
 	private List<N> getNeighborsSatisfyingEdgeAndAttributeRequirements(GPNode currentNode, RelevantEdge relevantEdge) {
 		N currentNodeInDB = assignments.get(currentNode);
-		List<E> graphEdges;
+		Collection<E> graphEdges;
 		Function<E, N> neighborFinder;
 		if(relevantEdge.isOutgoing()){
 			graphEdges = graph.findOutgoingEdges(currentNodeInDB);
@@ -322,7 +323,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		);
 	}
 
-	private boolean checkNecessaryEdgesOneDirection(List<E> neighboringEdges, List<GPEdge> patternEdges, Function<E, N> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {
+	private boolean checkNecessaryEdgesOneDirection(Collection<E> neighboringEdges, Collection<GPEdge> patternEdges, Function<E, N> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {
 		for(GPEdge edge : Objects.requireNonNullElse(patternEdges, List.<GPEdge>of())){
 			boolean isSatisfied = false;
 			GPNode otherNode = gpOtherNodeFinder.apply(edge);
@@ -352,8 +353,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	}
 
 	private List<RelevantEdge> getRelevantEdges(GPNode currentNode) {
-		List<GPEdge> outgoingEdges = Objects.requireNonNullElse(pattern.graph().outgoingEdges().get(currentNode), List.of());
-		List<GPEdge> incomingEdges = Objects.requireNonNullElse(pattern.graph().incomingEdges().get(currentNode), List.of());
+		Collection<GPEdge> outgoingEdges = Objects.requireNonNullElse(pattern.graph().outgoingEdges().get(currentNode), Set.of());
+		Collection<GPEdge> incomingEdges = Objects.requireNonNullElse(pattern.graph().incomingEdges().get(currentNode), Set.of());
 
 		List<RelevantEdge> relevantEdges = new ArrayList<>();
 		for(GPEdge edge : incomingEdges){

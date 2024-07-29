@@ -1,7 +1,7 @@
 package io.github.danthe1st.arebac.data.graph_pattern;
 
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -17,14 +17,14 @@ import io.github.danthe1st.arebac.data.commongraph.memory.CommonInMemoryGraph;
  * @see GraphPattern
  */
 public record GPGraph(Map<String, GPNode> nodes,
-		Map<GPNode, List<GPEdge>> outgoingEdges,
-		Map<GPNode, List<GPEdge>> incomingEdges) implements CommonInMemoryGraph<GPNode, GPEdge> {
+		Map<GPNode, Collection<GPEdge>> outgoingEdges,
+		Map<GPNode, Collection<GPEdge>> incomingEdges) implements CommonInMemoryGraph<GPNode, GPEdge> {
 
-	public GPGraph(List<GPNode> nodes, List<GPEdge> edges) {
+	public GPGraph(Collection<GPNode> nodes, Collection<GPEdge> edges) {
 		this(
 				nodes.stream().collect(Collectors.toMap(GPNode::id, Function.identity())),
-				edges.stream().collect(Collectors.groupingBy(GPEdge::source, LinkedHashMap::new, Collectors.toList())),
-				edges.stream().collect(Collectors.groupingBy(GPEdge::target, LinkedHashMap::new, Collectors.toList()))
+				edges.stream().collect(Collectors.groupingBy(GPEdge::source, Collectors.toCollection(HashSet::new))),
+				edges.stream().collect(Collectors.groupingBy(GPEdge::target, Collectors.toCollection(HashSet::new)))
 		);
 	}
 
