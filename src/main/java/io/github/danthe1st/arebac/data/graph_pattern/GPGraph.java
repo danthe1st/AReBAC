@@ -1,5 +1,6 @@
 package io.github.danthe1st.arebac.data.graph_pattern;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,8 +23,8 @@ public record GPGraph(Map<String, GPNode> nodes,
 	public GPGraph(List<GPNode> nodes, List<GPEdge> edges) {
 		this(
 				nodes.stream().collect(Collectors.toMap(GPNode::id, Function.identity())),
-				edges.stream().collect(Collectors.groupingBy(GPEdge::source)),
-				edges.stream().collect(Collectors.groupingBy(GPEdge::target))
+				edges.stream().collect(Collectors.groupingBy(GPEdge::source, LinkedHashMap::new, Collectors.toList())),
+				edges.stream().collect(Collectors.groupingBy(GPEdge::target, LinkedHashMap::new, Collectors.toList()))
 		);
 	}
 
