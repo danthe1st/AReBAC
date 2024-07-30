@@ -152,7 +152,7 @@ class FriendOfFriendEvaluateTest {
 				Map.of(requestor, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(requestorId)))),
 				Map.of(),
 				List.of(friendOfFriend),
-				Map.of("requestor", requestor, FRIEND_EDGE_TYPE, friend, "friendOfFriend", friendOfFriend)
+				Map.of("requestor", requestor, "friend", friend, "friendOfFriend", friendOfFriend)
 		);
 	}
 
