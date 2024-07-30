@@ -30,6 +30,7 @@ class FriendOfFriendEvaluateTest {
 	private static final String GOOD_FRIEND_EDGE_ATTRIBUTE = "goodFriend";
 
 	private InMemoryGraphNode outsider = new InMemoryGraphNode("out", USER_NODE_TYPE, Map.of());
+	private InMemoryGraphNode otherOutsider = new InMemoryGraphNode("otherOut", USER_NODE_TYPE, Map.of());
 	private InMemoryGraphNode connector = new InMemoryGraphNode("con", USER_NODE_TYPE, Map.of());
 	private InMemoryGraphNode connectorFriend = new InMemoryGraphNode("conFriend", USER_NODE_TYPE, Map.of());
 	private InMemoryGraphNode triangleCompletor = new InMemoryGraphNode("completor", USER_NODE_TYPE, Map.of());
@@ -41,8 +42,8 @@ class FriendOfFriendEvaluateTest {
 	 * |
 	 * connector -- triangleCompletor
 	 * |               ^
-	 * |              / (unidirectional)
-	 * connectorFriend
+	 * |              /
+	 * connectorFriend -> otherOutsider
 	 * </pre>
 	 */
 	public FriendOfFriendEvaluateTest() {
@@ -81,13 +82,20 @@ class FriendOfFriendEvaluateTest {
 				connectorFriend, triangleCompletor, "con->completor", FRIEND_EDGE_TYPE,
 				Map.of(GOOD_FRIEND_EDGE_ATTRIBUTE, attribute(false))
 		);
+		
+		// unidirectional
+		InMemoryGraphEdge connectorFriendToOtherOutsiderEdge = new InMemoryGraphEdge(
+				connectorFriend, otherOutsider, "con->otherOut", FRIEND_EDGE_TYPE,
+				Map.of(GOOD_FRIEND_EDGE_ATTRIBUTE, attribute(false))
+		);
 		graph = new InMemoryGraph(
-				List.of(outsider, connector, connectorFriend, triangleCompletor),
+				List.of(outsider, connector, connectorFriend, triangleCompletor, otherOutsider),
 				List.of(
 						outsiderEdge, outsiderBackEdge,
 						connectorFriendEdge, connectorFriendBackEdge,
 						connectorCompletorEdge, connectorCompletorBackEdge,
-						connectorFriendToTriangleEdge
+						connectorFriendToTriangleEdge,
+						connectorFriendToOtherOutsiderEdge
 				)
 		);
 	}
@@ -110,7 +118,7 @@ class FriendOfFriendEvaluateTest {
 	void evaluateConnector() {
 		GraphPattern pattern = createFriendOfFriendPattern(connector.id());
 		Set<List<InMemoryGraphNode>> result = GPEval.evaluate(graph, pattern);
-		assertEquals(Set.of(List.of(triangleCompletor)), result);
+		assertEquals(Set.of(List.of(triangleCompletor), List.of(otherOutsider)), result);
 	}
 
 	@Test
@@ -167,5 +175,48 @@ class FriendOfFriendEvaluateTest {
 					.flatMap(Collection::stream)
 					.collect(Collectors.toMap(e -> e, e -> List.of(new AttributeRequirement(GOOD_FRIEND_EDGE_ATTRIBUTE, EQUAL, attribute(true)))));
 		return new GraphPattern(friendOfFriendPattern.graph(), friendOfFriendPattern.mutualExclusionConstraints(), friendOfFriendPattern.nodeRequirements(), newEdgeRequirements, friendOfFriendPattern.returnedNodes(), friendOfFriendPattern.actorsToNodes());
+	}
+	
+	@Test
+	void testGetBidirectionalConnectionsOfConnectorFriend() {
+		Set<List<InMemoryGraphNode>> result = GPEval.evaluate(graph, createBidirectionalCheckPattern(connectorFriend.id()));
+		assertEquals(Set.of(List.of(connector)), result);
+	}
+	
+	@Test
+	void testGetBidirectionalConnectionsOfOutsider() {
+		Set<List<InMemoryGraphNode>> result = GPEval.evaluate(graph, createBidirectionalCheckPattern(outsider.id()));
+		assertEquals(Set.of(List.of(connector)), result);
+	}
+	
+	@Test
+	void testGetBidirectionalConnectionsOfConnector() {
+		Set<List<InMemoryGraphNode>> result = GPEval.evaluate(graph, createBidirectionalCheckPattern(connector.id()));
+		assertEquals(Set.of(List.of(outsider), List.of(connectorFriend), List.of(triangleCompletor)), result);
+	}
+	
+	@Test
+	void testGetBidirectionalConnectionsOfTriangleCompletor() {
+		Set<List<InMemoryGraphNode>> result = GPEval.evaluate(graph, createBidirectionalCheckPattern(triangleCompletor.id()));
+		assertEquals(Set.of(List.of(connector)), result);
+	}
+	
+	private GraphPattern createBidirectionalCheckPattern(String requestorId) {
+		GPNode requestor = new GPNode("requestor", USER_NODE_TYPE);
+		GPNode friend = new GPNode("f", USER_NODE_TYPE);
+
+		return new GraphPattern(
+				new GPGraph(
+						List.of(requestor, friend),
+						List.of(
+								new GPEdge(requestor, friend, "req->f", FRIEND_EDGE_TYPE),
+								new GPEdge(friend, requestor, "f->req", FRIEND_EDGE_TYPE)
+						)
+				),
+				List.of(),
+				Map.of(requestor, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(requestorId)))),
+				Map.of(),
+				List.of(friend), Map.of()
+		);
 	}
 }
