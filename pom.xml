@@ -11,6 +11,7 @@
 	</properties>
 	<modules>
 		<module>arebac-core</module>
+		<module>arebac-neo4j</module>
 	</modules>
 	<build>
 		<plugins>
