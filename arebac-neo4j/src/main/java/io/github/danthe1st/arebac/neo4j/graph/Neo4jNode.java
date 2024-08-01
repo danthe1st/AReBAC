@@ -1,6 +1,7 @@
 package io.github.danthe1st.arebac.neo4j.graph;
 
 import java.util.Iterator;
+import java.util.Objects;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
@@ -47,4 +48,27 @@ public class Neo4jNode implements AttributedNode {
 	public Node getDBNode() {
 		return node;
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(node.getElementId());
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(this == obj){
+			return true;
+		}
+		if((obj == null) || (getClass() != obj.getClass())){
+			return false;
+		}
+		Neo4jNode other = (Neo4jNode) obj;
+		return Objects.equals(node.getElementId(), other.node.getElementId());
+	}
+	
+	@Override
+	public String toString() {
+		return "Neo4jNode [node=" + node + "]";
+	}
+	
 }

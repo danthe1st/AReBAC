@@ -1,5 +1,7 @@
 package io.github.danthe1st.arebac.neo4j.graph;
 
+import java.util.Objects;
+
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
 import org.neo4j.graphdb.Relationship;
@@ -48,4 +50,22 @@ public class Neo4jEdge implements AttributedGraphEdge<Neo4jNode> {
 	public Relationship getDBEdge() {
 		return relationship;
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(relationship.getElementId());
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(this == obj){
+			return true;
+		}
+		if((obj == null) || (getClass() != obj.getClass())){
+			return false;
+		}
+		Neo4jEdge other = (Neo4jEdge) obj;
+		return Objects.equals(relationship.getElementId(), other.relationship.getElementId());
+	}
+	
 }
