@@ -163,11 +163,16 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		Set<N> currentNodeCandidates = candidates.get(currentNode);
 		Set<GPNode> exclusionConstraints = mutualExclusionConstraints.get(currentNode);
 		if(exclusionConstraints != null){
-			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, Objects.requireNonNullElse(incomingConflicts.get(currentNode), new HashSet<>()));
+			filterMutualExclusionConstraints(currentNode, currentNodeCandidates, exclusionConstraints, Objects.requireNonNullElse(incomingConflicts.get(currentNode), new HashSet<>()));
 		}
 		for(N candidateNode : currentNodeCandidates){
-			Map<GPNode, Set<N>> newCandidates = new HashMap<>(candidates);
-			newCandidates.remove(currentNode);
+			Map<GPNode, Set<N>> newCandidates = candidates
+				.entrySet()
+				.stream()
+				.filter(entry -> !entry.getKey().equals(currentNode))
+				.collect(Collectors.toMap(Map.Entry::getKey, entry -> new HashSet<>(entry.getValue())));
+//			Map<GPNode, Set<N>> newCandidates = new HashMap<>(candidates);
+//			newCandidates.remove(currentNode);
 			Map<GPNode, N> newAssignments = new HashMap<>(assignments);
 			newAssignments.put(currentNode, candidateNode);
 			Map<GPNode, Set<GPNode>> newIncomingConflicts = incomingConflicts// deep copy
@@ -183,7 +188,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			boolean valid = child.forwardChecking(currentNode, newIncomingConflicts, outgoingConflicts);
 			if(valid){
 				deadEnd = false;
-				Set<GPNode> jump = child.run(incomingConflicts);
+				Set<GPNode> jump = child.run(newIncomingConflicts);// the paper uses incomingConflicts (confIn) here but I think that's just a missing single quote
 				if(!jump.isEmpty() && !jump.contains(currentNode)){
 					return jump;
 				}
@@ -236,14 +241,20 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return candidate;
 	}
 
-	private void filterMutualExclusionConstraints(Set<N> candidatesForNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts) {
+	private void filterMutualExclusionConstraints(GPNode currentNode, Set<N> candidatesForNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts) {
 		for(Iterator<N> it = candidatesForNode.iterator(); it.hasNext();){
-			N graphCandidate = it.next();
-			for(GPNode exclusionConstraint : exclusionConstraints){
-				if(graphCandidate.equals(assignments.get(exclusionConstraint))){
-					incomingConflicts.add(exclusionConstraint);
-					it.remove();
-				}
+			filterMutualExclusionConstraintWithSpecificCandidate(currentNode, exclusionConstraints, incomingConflicts, it);
+		}
+
+	}
+
+	private void filterMutualExclusionConstraintWithSpecificCandidate(GPNode currentNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts, Iterator<N> it) {
+		N graphCandidate = it.next();
+		for(GPNode exclusionConstraint : exclusionConstraints){
+			if(graphCandidate.equals(assignments.get(exclusionConstraint))){
+				incomingConflicts.add(exclusionConstraint);
+				it.remove();
+				return;
 			}
 		}
 	}
@@ -270,6 +281,19 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 				}
 				if(otherNodeCandidates.isEmpty()){
 					outgoingConflicts.add(otherNode);
+					return false;
+				}
+			}else{
+				// not in the paper
+				// It is possible that two candidates for different nodes in the graph pattern exclude each other via a necessary edge
+				// In that case, one can be assigned without the other being removed
+				// This also needs to be tested
+
+				N currentNodeInGraph = Objects.requireNonNull(assignments.get(currentNode));
+				List<GPNode> conflictingNodes = checkHasNecessaryEdgesFindConflict(currentNode, otherNode, currentNodeInGraph);
+				if(!conflictingNodes.isEmpty()){
+					incomingConflicts.computeIfAbsent(currentNode, n -> new HashSet<>()).addAll(conflictingNodes);
+//					outgoingConflicts.addAll(conflictingNodes);
 					return false;
 				}
 			}
@@ -304,40 +328,47 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return currentEdge.edge.edgeType().equals(graphEdge.edgeType()) &&
 				currentEdge.otherNode.nodeType().equals(neighbor.nodeType()) &&
 				checkAttributeRequirements(pattern.edgeRequirements().get(currentEdge.edge), graphEdge) &&
-				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor) &&
-				checkHasNecessaryEdges(currentEdge.otherNode, neighbor);
+				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor)
+//				&& checkHasNecessaryEdges(currentEdge.otherNode, null, neighbor)//the paper isn't exactly clear whether this is necessary
+		;
 	}
 
-	private boolean checkHasNecessaryEdges(GPNode node, N graphNode) {
-		boolean satisfied = checkNecessaryEdgesOneDirection(
+//	private boolean checkHasNecessaryEdges(GPNode node, GPNode otherNodeFilter, N graphNode) {
+//		return checkHasNecessaryEdgesFindConflict(node, otherNodeFilter, graphNode).isEmpty();
+//	}
+
+	private List<GPNode> checkHasNecessaryEdgesFindConflict(GPNode node, GPNode otherNodeFilter, N graphNode) {
+		List<GPNode> conflictAccumulator = new ArrayList<>();
+		checkNecessaryEdgesOneDirection(
 				graph.findOutgoingEdges(graphNode), pattern.graph().outgoingEdges().get(node),
-				AttributedGraphEdge::target, GPEdge::target
+				AttributedGraphEdge::target, GPEdge::target,
+				otherNodeFilter, conflictAccumulator
 		);
-		if(!satisfied){
-			return false;
-		}
 
-		return checkNecessaryEdgesOneDirection(
+		checkNecessaryEdgesOneDirection(
 				graph.findIncomingEdges(graphNode), pattern.graph().incomingEdges().get(node),
-				AttributedGraphEdge::source, GPEdge::source
+				AttributedGraphEdge::source, GPEdge::source,
+				otherNodeFilter, conflictAccumulator
 		);
+		return conflictAccumulator;
 	}
 
-	private boolean checkNecessaryEdgesOneDirection(Collection<E> neighboringEdges, Collection<GPEdge> patternEdges, Function<E, N> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder) {
+	private void checkNecessaryEdgesOneDirection(Collection<E> neighboringEdges, Collection<GPEdge> patternEdges, Function<E, N> edgeOtherNodeFinder, Function<GPEdge, GPNode> gpOtherNodeFinder, GPNode otherNodeFilter, List<GPNode> conflictAccumulator) {
 		for(GPEdge edge : Objects.requireNonNullElse(patternEdges, List.<GPEdge>of())){
 			boolean isSatisfied = false;
 			GPNode otherNode = gpOtherNodeFinder.apply(edge);
-			N otherGraphNode = assignments.get(otherNode);
-			for(E graphEdge : neighboringEdges){
-				if(edge.edgeType().equals(graphEdge.edgeType()) && (otherGraphNode == null || edgeOtherNodeFinder.apply(graphEdge).equals(otherGraphNode))){
-					isSatisfied = true;
+			if(otherNodeFilter == null || otherNode.equals(otherNodeFilter)){
+				N otherGraphNode = assignments.get(otherNode);
+				for(E graphEdge : neighboringEdges){
+					if(edge.edgeType().equals(graphEdge.edgeType()) && (otherGraphNode == null || edgeOtherNodeFinder.apply(graphEdge).equals(otherGraphNode))){
+						isSatisfied = true;
+					}
+				}
+				if(!isSatisfied){
+					conflictAccumulator.add(otherNode);
 				}
 			}
-			if(!isSatisfied){
-				return false;
-			}
 		}
-		return true;
 	}
 
 	private boolean checkAttributeRequirements(List<AttributeRequirement> requirements, AttributeAware graphElement) {

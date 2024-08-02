@@ -53,12 +53,12 @@ public class Neo4JSetup {
 		}
 		boolean databaseExists = Files.exists(DB_DIRECTORY);
 		DatabaseManagementService databaseManagementService = createManagementService();
-			if(!databaseExists){
-				databaseManagementService.shutdown();
-				loadDB();
-				databaseManagementService = createManagementService();
-			}
-			return createDB(databaseManagementService);
+		if(!databaseExists){
+			databaseManagementService.shutdown();
+			loadDB();
+			databaseManagementService = createManagementService();
+		}
+		return createDB(databaseManagementService);
 	}
 
 	private static DatabaseManagementService createManagementService() {
@@ -73,6 +73,7 @@ public class Neo4JSetup {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			service.shutdown();
 		}));
+		Neo4JSetup.graphDb = graphDb;
 		return graphDb;
 	}
 
@@ -83,22 +84,6 @@ public class Neo4JSetup {
 			tx.getAllRelationshipTypes().forEach(System.out::println);
 			System.out.println(tx.findNodes(Label.label("User")).next().getAllProperties());
 			System.out.println(tx.findNode(Label.label("User"), "uuid", 6309).getElementId());
-//			Node firstNode = tx.createNode();
-
-
-
-//			System.out.println(firstNode.getElementId());
-//			firstNode.setProperty("message", "Hello, ");
-//			Node secondNode = tx.createNode();
-//			secondNode.setProperty("message", "World!");
-//
-//			Relationship relationship = firstNode.createRelationshipTo(secondNode, RelTypes.KNOWS);
-//			relationship.setProperty("message", "brave Neo4j ");
-//
-//			System.out.print(firstNode.getProperty("message"));
-//			System.out.print(relationship.getProperty("message"));
-//			System.out.print(secondNode.getProperty("message"));
-//			tx.commit();
 		}
 	}
 
@@ -108,9 +93,6 @@ public class Neo4JSetup {
 
 		DatabaseLayout layout = DatabaseLayout.of(Neo4jLayout.of(DB_DIRECTORY), DB_NAME);
 		deleteRecursively(layout.databaseDirectory());
-//		Path databasesDirectory = Path.of("db/data/databases");
-//		Files.createDirectories(databasesDirectory);
-//		DatabaseLayout layout = DatabaseLayout.ofFlat(databasesDirectory.resolve("neo4j"));
 		HttpResponse<InputStream> res = HttpClient
 			.newBuilder()
 			.followRedirects(Redirect.ALWAYS)
@@ -130,7 +112,7 @@ public class Neo4JSetup {
 			os.flush();
 			loader.load(download, layout, true, false, DumpFormatSelector::decompress);
 		}finally{
-//			Files.delete(download);
+			Files.delete(download);
 		}
 	}
 

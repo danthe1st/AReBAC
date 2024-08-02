@@ -36,12 +36,13 @@ public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 	
 	private Collection<Neo4jEdge> findEdges(Neo4jNode node, Direction direction) {
 		Node internalNode = node.getDBNode();
-		ResourceIterable<Relationship> relationships = internalNode.getRelationships(direction);
-		List<Neo4jEdge> edges = new ArrayList<>();
-		for(Relationship relationship : relationships){
-			edges.add(new Neo4jEdge(relationship));
+		try(ResourceIterable<Relationship> relationships = internalNode.getRelationships(direction)){
+			List<Neo4jEdge> edges = new ArrayList<>();
+			for(Relationship relationship : relationships){
+				edges.add(new Neo4jEdge(relationship));
+			}
+			return Collections.unmodifiableList(edges);
 		}
-		return Collections.unmodifiableList(edges);
 	}
 	
 }

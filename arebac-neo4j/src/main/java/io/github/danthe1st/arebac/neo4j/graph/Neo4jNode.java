@@ -41,6 +41,7 @@ public class Neo4jNode implements AttributedNode {
 		case String s -> AttributeValue.attribute(s);
 		case Boolean b -> AttributeValue.attribute(b);
 		case Integer l -> AttributeValue.attribute(l);
+		case Long l -> AttributeValue.attribute((int) (long) l);
 		default -> throw new UnsupportedOperationException("unknown property type");
 		};
 	}
