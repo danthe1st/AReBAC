@@ -86,11 +86,13 @@ class SOTest {
 
 	@Test
 	@Order(2)
-	void testWithFakeDB() {
+	void testSimpleExampleWithInMemoryDB() {
+		InMemoryGraphNode tag = new InMemoryGraphNode("t", "Tag", Map.of());
+
 		InMemoryGraphNode q1 = new InMemoryGraphNode("q1", "Question", Map.of());
 		InMemoryGraphNode q2 = new InMemoryGraphNode("q2", "Question", Map.of());
 
-		InMemoryGraphNode u1 = new InMemoryGraphNode("u1", "User", Map.of());
+		InMemoryGraphNode u1 = new InMemoryGraphNode("u1", "User", Map.of("uuid", AttributeValue.attribute(123)));
 		InMemoryGraphNode u2 = new InMemoryGraphNode("u2", "User", Map.of());
 
 		InMemoryGraphNode u1q1 = new InMemoryGraphNode("u1q1", "Comment", Map.of());
@@ -99,8 +101,10 @@ class SOTest {
 		InMemoryGraphNode u2q2 = new InMemoryGraphNode("u2q2", "Comment", Map.of());
 
 		InMemoryGraph graph = new InMemoryGraph(
-				List.of(q1, q2, u1, u2, u1q1, u1q2, u2q1, u2q2),
+				List.of(tag, q1, q2, u1, u2, u1q1, u1q2, u2q1, u2q2),
 				List.of(
+						new InMemoryGraphEdge(q1, tag, "q1T", "TAGGED", Map.of()),
+						new InMemoryGraphEdge(q2, tag, "q2T", "TAGGED", Map.of()),
 						new InMemoryGraphEdge(u1q1, q1, "u1q1C", "COMMENTED_ON", Map.of()),
 						new InMemoryGraphEdge(u1q2, q2, "u1q2C", "COMMENTED_ON", Map.of()),
 						new InMemoryGraphEdge(u2q1, q1, "u2q1C", "COMMENTED_ON", Map.of()),
@@ -112,11 +116,11 @@ class SOTest {
 				)
 		);
 
-		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(graph, createCommentsToSameQuestionInTagPattern("u1"));
+		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(graph, createCommentsToSameQuestionInTagPattern(tag.id(), 123));
 		assertEquals(2, results.size());
 
 	}
-	
+
 	@Test
 	@Order(3)
 	void testFindCommentsFromSameUsersToQuestionsInTag() {
@@ -124,20 +128,21 @@ class SOTest {
 			long expectedElementCount;
 			try(Result testResult = tx.execute(
 					"""
-							MATCH (q1:Question)<-[:COMMENTED_ON]-(u1c1:Comment)<-[:COMMENTED]-(u1:User{uuid:$uID})
-							MATCH (q1:Question)<-[:COMMENTED_ON]-(u2c1:Comment)<-[:COMMENTED]-(u2:User)
-							MATCH (q2:Question)<-[:COMMENTED_ON]-(u1c2:Comment)<-[:COMMENTED]-(u1:User)
-							MATCH (q2:Question)<-[:COMMENTED_ON]-(u2c2:Comment)<-[:COMMENTED]-(u2:User)
-							WHERE q1 <> q2 AND u1 <> u2 AND u1.uuid=$uID
-							RETURN u1.uuid, u2.uuid
+							MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q1:Question)<-[:COMMENTED_ON]-(u1c1:Comment)<-[:COMMENTED]-(u1:User{uuid:$uID})
+							MATCH                                   (q1:Question)<-[:COMMENTED_ON]-(u2c1:Comment)<-[:COMMENTED]-(u2:User)
+							MATCH                (t:Tag)<-[:TAGGED]-(q2:Question)<-[:COMMENTED_ON]-(u1c2:Comment)<-[:COMMENTED]-(u1:User)
+							MATCH                                   (q2:Question)<-[:COMMENTED_ON]-(u2c2:Comment)<-[:COMMENTED]-(u2:User)
+							WHERE q1 <> q2 AND u1 <> u2
+							RETURN u1c1, u2c1, u1c2, u2c2
 							""",
-					Map.of("uID", 6692895)
+					Map.of("uID", 6692895, "tagName", "neo4j")
 			)){
 				expectedElementCount = testResult.stream().count();
 			}
 
 			Node userNode = tx.findNode(Neo4JSetup.USER, "uuid", 6692895);
-			GraphPattern pattern = createCommentsToSameQuestionInTagPattern(userNode.getElementId());
+			Node tagNode = tx.findNode(Neo4JSetup.TAG, "name", "neo4j");
+			GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId(), 6692895);
 			Set<List<Neo4jNode>> results = GPEval.evaluate(new Neo4jDB(tx), pattern);
 			assertNotEquals(0, results.size());
 			assertEquals(expectedElementCount, results.size());
@@ -181,23 +186,27 @@ class SOTest {
 		}
 	}
 
-	private GraphPattern createCommentsToSameQuestionInTagPattern(String userId) {
+	private GraphPattern createCommentsToSameQuestionInTagPattern(String tagId, int userId) {
+		GPNode tag = new GPNode("tag", Neo4JSetup.TAG.name());
+
 		GPNode user1 = new GPNode("user1", Neo4JSetup.USER.name());
 		GPNode user2 = new GPNode("user2", Neo4JSetup.USER.name());
 
 		GPNode question1 = new GPNode("question1", Neo4JSetup.QUESTION.name());
-		GPNode user1Comment1 = new GPNode("user1Answer1", Neo4JSetup.COMMENT.name());
-		GPNode user2Comment1 = new GPNode("user2Answer1", Neo4JSetup.COMMENT.name());
+		GPNode user1Comment1 = new GPNode("user1Comment1", Neo4JSetup.COMMENT.name());
+		GPNode user2Comment1 = new GPNode("user2Comment1", Neo4JSetup.COMMENT.name());
 
 		GPNode question2 = new GPNode("question2", Neo4JSetup.QUESTION.name());
-		GPNode user1Comment2 = new GPNode("user1Answer2", Neo4JSetup.COMMENT.name());
-		GPNode user2Comment2 = new GPNode("user2Answer2", Neo4JSetup.COMMENT.name());
+		GPNode user1Comment2 = new GPNode("user1Comment2", Neo4JSetup.COMMENT.name());
+		GPNode user2Comment2 = new GPNode("user2Comment2", Neo4JSetup.COMMENT.name());
 
 		GPGraph graph = new GPGraph(
 				List.of(
-						user1, user2, question1, question2, user1Comment1, user1Comment2, user2Comment1, user2Comment2
+						tag, user1, user2, question1, question2, user1Comment1, user1Comment2, user2Comment1, user2Comment2
 				),
 				List.of(
+						new GPEdge(question1, tag, null, Neo4JSetup.RelType.TAGGED.name()),
+						new GPEdge(question2, tag, null, Neo4JSetup.RelType.TAGGED.name()),
 
 						new GPEdge(user1, user1Comment1, null, Neo4JSetup.RelType.COMMENTED.name()),
 						new GPEdge(user1, user1Comment2, null, Neo4JSetup.RelType.COMMENTED.name()),
@@ -217,7 +226,8 @@ class SOTest {
 						new MutualExclusionConstraint(question1, question2)
 				),
 				Map.of(
-						user1, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute(userId)))
+						user1, List.of(new AttributeRequirement("uuid", AttributeRequirementOperator.EQUAL, AttributeValue.attribute(userId))),
+						tag, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute(tagId)))
 				),
 				Map.of(),
 				List.of(user1Comment1, user2Comment1, user1Comment2, user2Comment2),
