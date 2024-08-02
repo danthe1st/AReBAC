@@ -3,10 +3,12 @@ package io.github.danthe1st.arebac.neo4j.tests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +30,6 @@ import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.neo4j.dbms.archive.IncorrectFormat;
 import org.neo4j.graphdb.Direction;
@@ -50,7 +51,6 @@ class SOTest {
 	}
 
 	@Test
-	@Order(1)
 	void testFindAnswersOfUser() {
 		try(Transaction tx = database.beginTx()){
 			Neo4jDB dbAsGraph = new Neo4jDB(tx);
@@ -85,14 +85,13 @@ class SOTest {
 	}
 
 	@Test
-	@Order(2)
 	void testSimpleExampleWithInMemoryDB() {
 		InMemoryGraphNode tag = new InMemoryGraphNode("t", "Tag", Map.of());
 
 		InMemoryGraphNode q1 = new InMemoryGraphNode("q1", "Question", Map.of());
 		InMemoryGraphNode q2 = new InMemoryGraphNode("q2", "Question", Map.of());
 
-		InMemoryGraphNode u1 = new InMemoryGraphNode("u1", "User", Map.of("uuid", AttributeValue.attribute(123)));
+		InMemoryGraphNode u1 = new InMemoryGraphNode("u1", "User", Map.of());
 		InMemoryGraphNode u2 = new InMemoryGraphNode("u2", "User", Map.of());
 
 		InMemoryGraphNode u1q1 = new InMemoryGraphNode("u1q1", "Comment", Map.of());
@@ -116,19 +115,30 @@ class SOTest {
 				)
 		);
 
-		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(graph, createCommentsToSameQuestionInTagPattern(tag.id(), 123));
-		assertEquals(2, results.size());
+		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(graph, createCommentsToSameQuestionInTagPattern(tag.id()));
+		assertEquals(4, results.size());
+		assertEquals(
+				Set.of(
+						List.of(u1q1, u2q1, u1q2, u2q2),
+						List.of(u1q2, u2q2, u1q1, u2q1),
+						List.of(u2q1, u1q1, u2q2, u1q2),
+						List.of(u2q2, u1q2, u2q1, u1q1)
+				), results
+		);
 
 	}
 
 	@Test
-	@Order(3)
 	void testFindCommentsFromSameUsersToQuestionsInTag() {
+		assertTimeout(Duration.ofSeconds(30), this::testFindCommentsFromSameUsersToQuestionsInTagImpl);
+	}
+	
+	private void testFindCommentsFromSameUsersToQuestionsInTagImpl() {
 		try(Transaction tx = database.beginTx()){
 			long expectedElementCount;
 			try(Result testResult = tx.execute(
 					"""
-							MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q1:Question)<-[:COMMENTED_ON]-(u1c1:Comment)<-[:COMMENTED]-(u1:User{uuid:$uID})
+							MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q1:Question)<-[:COMMENTED_ON]-(u1c1:Comment)<-[:COMMENTED]-(u1:User)
 							MATCH                                   (q1:Question)<-[:COMMENTED_ON]-(u2c1:Comment)<-[:COMMENTED]-(u2:User)
 							MATCH                (t:Tag)<-[:TAGGED]-(q2:Question)<-[:COMMENTED_ON]-(u1c2:Comment)<-[:COMMENTED]-(u1:User)
 							MATCH                                   (q2:Question)<-[:COMMENTED_ON]-(u2c2:Comment)<-[:COMMENTED]-(u2:User)
@@ -140,9 +150,8 @@ class SOTest {
 				expectedElementCount = testResult.stream().count();
 			}
 
-			Node userNode = tx.findNode(Neo4JSetup.USER, "uuid", 6692895);
 			Node tagNode = tx.findNode(Neo4JSetup.TAG, "name", "neo4j");
-			GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId(), 6692895);
+			GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId());
 			Set<List<Neo4jNode>> results = GPEval.evaluate(new Neo4jDB(tx), pattern);
 			assertNotEquals(0, results.size());
 			assertEquals(expectedElementCount, results.size());
@@ -186,7 +195,7 @@ class SOTest {
 		}
 	}
 
-	private GraphPattern createCommentsToSameQuestionInTagPattern(String tagId, int userId) {
+	private GraphPattern createCommentsToSameQuestionInTagPattern(String tagId) {
 		GPNode tag = new GPNode("tag", Neo4JSetup.TAG.name());
 
 		GPNode user1 = new GPNode("user1", Neo4JSetup.USER.name());
@@ -226,7 +235,6 @@ class SOTest {
 						new MutualExclusionConstraint(question1, question2)
 				),
 				Map.of(
-						user1, List.of(new AttributeRequirement("uuid", AttributeRequirementOperator.EQUAL, AttributeValue.attribute(userId))),
 						tag, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute(tagId)))
 				),
 				Map.of(),
