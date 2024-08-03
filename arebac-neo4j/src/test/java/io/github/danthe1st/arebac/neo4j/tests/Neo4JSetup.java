@@ -25,7 +25,6 @@ import org.neo4j.dbms.archive.Loader;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.Transaction;
 import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.layout.DatabaseLayout;
@@ -42,10 +41,6 @@ public class Neo4JSetup {
 	public static Label COMMENT = Label.label("Comment");
 	
 	private static GraphDatabaseService graphDb;
-
-	public static void main(String[] args) throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
-		doSomething(getDatabase());
-	}
 
 	public static synchronized GraphDatabaseService getDatabase() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
 		if(graphDb != null){
@@ -75,16 +70,6 @@ public class Neo4JSetup {
 		}));
 		Neo4JSetup.graphDb = graphDb;
 		return graphDb;
-	}
-
-	private static void doSomething(GraphDatabaseService graphDb) {
-		try(Transaction tx = graphDb.beginTx()){
-
-			tx.getAllLabels().forEach(System.out::println);
-			tx.getAllRelationshipTypes().forEach(System.out::println);
-			System.out.println(tx.findNodes(Label.label("User")).next().getAllProperties());
-			System.out.println(tx.findNode(Label.label("User"), "uuid", 6309).getElementId());
-		}
 	}
 
 	private static void loadDB() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
