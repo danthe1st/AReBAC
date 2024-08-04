@@ -1,5 +1,8 @@
 package io.github.danthe1st.arebac.neo4j.tests;
 
+import static io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.attribute;
+import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement.ID_KEY;
+import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator.EQUAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -14,13 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
-import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusionConstraint;
 import io.github.danthe1st.arebac.data.memory.InMemoryGraph;
 import io.github.danthe1st.arebac.data.memory.InMemoryGraphEdge;
@@ -78,7 +79,7 @@ class SOTest {
 						List.of(new GPEdge(requestor, answer, null, Neo4JSetup.RelType.PROVIDED.name()))
 				),
 				List.of(),
-				Map.of(requestor, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute(requestorId)))),
+				Map.of(requestor, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(requestorId)))),
 				Map.of(),
 				List.of(answer), Map.of("requestor", requestor, "answer", answer)
 		);
@@ -231,7 +232,7 @@ class SOTest {
 						new MutualExclusionConstraint(question1, question2)
 				),
 				Map.of(
-						tag, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute(tagId)))
+						tag, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(tagId)))
 				),
 				Map.of(),
 				List.of(user1Comment1, user2Comment1, user1Comment2, user2Comment2),

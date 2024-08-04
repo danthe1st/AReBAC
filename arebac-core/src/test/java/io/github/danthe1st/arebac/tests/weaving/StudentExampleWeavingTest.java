@@ -1,17 +1,19 @@
 package io.github.danthe1st.arebac.tests.weaving;
 
+import static io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.attribute;
+import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement.ID_KEY;
+import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator.EQUAL;
+import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator.LESS_THAN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.Map;
 
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
-import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator;
 import io.github.danthe1st.arebac.weaving.Weaving;
 import org.junit.jupiter.api.Test;
 
@@ -37,8 +39,8 @@ class StudentExampleWeavingTest {
 		return new GraphPattern(
 				requestGraph,
 				List.of(),
-				Map.of(student, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute("123")))),
-				Map.of(attendCourse, List.of(new AttributeRequirement("grade", AttributeRequirementOperator.LESS_THAN, AttributeValue.attribute(5)))),
+				Map.of(student, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute("123")))),
+				Map.of(attendCourse, List.of(new AttributeRequirement("grade", LESS_THAN, attribute(5)))),
 				List.of(course),
 				Map.of("student", student, "course", course)
 		);
@@ -58,7 +60,7 @@ class StudentExampleWeavingTest {
 		return new GraphPattern(
 				policyGraph,
 				List.of(),
-				Map.of(requestorNode, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute("123")))),
+				Map.of(requestorNode, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute("123")))),
 				Map.of(),
 				List.of(),
 				Map.of("course", courseNode)
@@ -79,10 +81,10 @@ class StudentExampleWeavingTest {
 				graph,
 				List.of(),
 				Map.of(
-						student, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute("123"))),
-						requestor, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute("123")))
+						student, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute("123"))),
+						requestor, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute("123")))
 				),
-				Map.of(attendCourse, List.of(new AttributeRequirement("grade", AttributeRequirementOperator.LESS_THAN, AttributeValue.attribute(5)))),
+				Map.of(attendCourse, List.of(new AttributeRequirement("grade", LESS_THAN, attribute(5)))),
 				List.of(course),
 				Map.of("student", student, "course", course)
 		);

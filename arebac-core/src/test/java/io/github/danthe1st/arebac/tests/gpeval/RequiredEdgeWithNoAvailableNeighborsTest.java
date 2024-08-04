@@ -1,18 +1,19 @@
 package io.github.danthe1st.arebac.tests.gpeval;
 
+import static io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.attribute;
+import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement.ID_KEY;
+import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator.EQUAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
-import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator;
 import io.github.danthe1st.arebac.data.memory.InMemoryGraph;
 import io.github.danthe1st.arebac.data.memory.InMemoryGraphNode;
 import io.github.danthe1st.arebac.gpeval.GPEval;
@@ -31,7 +32,7 @@ class RequiredEdgeWithNoAvailableNeighborsTest {
 						List.of(node, otherNode),
 						List.of(new GPEdge(node, otherNode, "", EDGE_TYPE))
 				), List.of(),
-				Map.of(node, List.of(new AttributeRequirement(AttributeRequirement.ID_KEY, AttributeRequirementOperator.EQUAL, AttributeValue.attribute("123")))),
+				Map.of(node, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute("123")))),
 				Map.of(), List.of(otherNode), Map.of()
 		);
 		
