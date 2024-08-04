@@ -47,7 +47,7 @@ class SOTest {
 
 	@BeforeEach
 	void setUp() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
-		database = Neo4JSetup.getDatabase();
+		database = SOSetup.getDatabase();
 	}
 
 	@Test
@@ -130,10 +130,6 @@ class SOTest {
 
 	@Test
 	void testFindCommentsFromSameUsersToQuestionsInTag() {
-		assertTimeout(Duration.ofSeconds(30), this::testFindCommentsFromSameUsersToQuestionsInTagImpl);
-	}
-	
-	private void testFindCommentsFromSameUsersToQuestionsInTagImpl() {
 		try(Transaction tx = database.beginTx()){
 			long expectedElementCount;
 			try(Result testResult = tx.execute(
@@ -152,7 +148,7 @@ class SOTest {
 
 			Node tagNode = tx.findNode(Neo4JSetup.TAG, "name", "neo4j");
 			GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId());
-			Set<List<Neo4jNode>> results = GPEval.evaluate(new Neo4jDB(tx), pattern);
+			Set<List<Neo4jNode>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new Neo4jDB(tx), pattern));
 			assertNotEquals(0, results.size());
 			assertEquals(expectedElementCount, results.size());
 			for(List<Neo4jNode> result : results){

@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
@@ -30,7 +29,6 @@ import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.Neo4jLayout;
 
 public class Neo4JSetup {
-	private static final Path DB_DIRECTORY = Path.of("db");
 	private static final String DB_NAME = "neo4j";
 
 	public static Label QUESTION = Label.label("Question");
@@ -41,22 +39,22 @@ public class Neo4JSetup {
 
 	private static GraphDatabaseService graphDb;
 
-	public static synchronized GraphDatabaseService getDatabase() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
+	public static synchronized GraphDatabaseService createDatabase(Path dbDirectory, URI dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
 		if(graphDb != null){
 			return graphDb;
 		}
-		boolean databaseExists = Files.exists(DB_DIRECTORY);
-		DatabaseManagementService databaseManagementService = createManagementService();
+		boolean databaseExists = Files.exists(dbDirectory);
+		DatabaseManagementService databaseManagementService = createManagementService(dbDirectory);
 		if(!databaseExists){
 			databaseManagementService.shutdown();
-			loadDB();
-			databaseManagementService = createManagementService();
+			loadDB(dbDirectory, dumpLocation);
+			databaseManagementService = createManagementService(dbDirectory);
 		}
 		return createDB(databaseManagementService);
 	}
 
-	private static DatabaseManagementService createManagementService() {
-		return new DatabaseManagementServiceBuilder(DB_DIRECTORY)
+	private static DatabaseManagementService createManagementService(Path dbDirectory) {
+		return new DatabaseManagementServiceBuilder(dbDirectory)
 			.setConfig(GraphDatabaseSettings.read_only_database_default, true)
 			.build();
 	}
@@ -71,8 +69,8 @@ public class Neo4JSetup {
 		return graphDb;
 	}
 
-	private static void loadDB() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
-		DatabaseLayout layout = DatabaseLayout.of(Neo4jLayout.of(DB_DIRECTORY), DB_NAME);
+	private static void loadDB(Path dbDirectory, URI dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
+		DatabaseLayout layout = DatabaseLayout.of(Neo4jLayout.of(dbDirectory), DB_NAME);
 		deleteRecursively(layout.databaseDirectory());
 		
 		Path download = Files.createTempFile("neo4j", ".dump");
@@ -84,7 +82,7 @@ public class Neo4JSetup {
 				.followRedirects(Redirect.ALWAYS)
 				.build()
 				.send(
-						HttpRequest.newBuilder(new URI("https://github.com/neo4j-graph-examples/stackoverflow/raw/main/data/stackoverflow-50.dump"))
+						HttpRequest.newBuilder(dumpLocation)
 							.build(),
 						BodyHandlers.ofFile(download)
 				);
