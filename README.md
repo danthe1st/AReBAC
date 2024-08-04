@@ -37,3 +37,12 @@ In order to use that algorithm on custom graph implementation/graph databases, o
 ### arebac-neo4j
 
 The `arebac-neo4j` module contains an implementation of `AttributedGraph` that uses an embedded Neo4J database that can be used to evaluate graph patterns against a Neo4J database with the GP-Eval algorithm.
+
+```java
+GraphDatabaseService database = getDatabase();
+GraphPattern pattern = createGraphPattern();
+try(Transaction tx = database.beginTx()){
+	Set<List<Neo4jNode>> results = GPEval.evaluate(dbAsGraph, pattern);
+	System.out.println(results);
+}
+```
