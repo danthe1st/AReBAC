@@ -1,8 +1,8 @@
 package io.github.danthe1st.arebac.neo4j.tests;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,7 +26,6 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.io.fs.DefaultFileSystemAbstraction;
-import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.Neo4jLayout;
 
@@ -39,7 +38,7 @@ public class Neo4JSetup {
 	public static Label TAG = Label.label("Tag");
 	public static Label ANSWER = Label.label("Answer");
 	public static Label COMMENT = Label.label("Comment");
-	
+
 	private static GraphDatabaseService graphDb;
 
 	public static synchronized GraphDatabaseService getDatabase() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
@@ -73,29 +72,26 @@ public class Neo4JSetup {
 	}
 
 	private static void loadDB() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
-		FileSystemAbstraction abs = new DefaultFileSystemAbstraction();
-		Loader loader = new Loader(abs, System.out);
-
 		DatabaseLayout layout = DatabaseLayout.of(Neo4jLayout.of(DB_DIRECTORY), DB_NAME);
 		deleteRecursively(layout.databaseDirectory());
-		HttpResponse<InputStream> res = HttpClient
-			.newBuilder()
-			.followRedirects(Redirect.ALWAYS)
-			.build()
-			.send(
-					HttpRequest.newBuilder(new URI("https://github.com/neo4j-graph-examples/stackoverflow/raw/main/data/stackoverflow-50.dump"))
-						.build(),
-					BodyHandlers.ofInputStream()
-			);
-		if(res.statusCode() != 200){
-			throw new IllegalStateException("invalid status code: " + res.statusCode());
-		}
+		
 		Path download = Files.createTempFile("neo4j", ".dump");
 
-		try(OutputStream os = Files.newOutputStream(download)){
-			res.body().transferTo(os);
-			os.flush();
-			loader.load(download, layout, true, false, DumpFormatSelector::decompress);
+		try(PrintStream nullPrintStream = new PrintStream(OutputStream.nullOutputStream())){
+			Loader loader = new Loader(new DefaultFileSystemAbstraction(), nullPrintStream);
+			HttpResponse<Path> res = HttpClient
+				.newBuilder()
+				.followRedirects(Redirect.ALWAYS)
+				.build()
+				.send(
+						HttpRequest.newBuilder(new URI("https://github.com/neo4j-graph-examples/stackoverflow/raw/main/data/stackoverflow-50.dump"))
+							.build(),
+						BodyHandlers.ofFile(download)
+				);
+			if(res.statusCode() != 200){
+				throw new IllegalStateException("invalid status code: " + res.statusCode());
+			}
+			loader.load(res.body(), layout, true, false, DumpFormatSelector::decompress);
 		}finally{
 			Files.delete(download);
 		}
