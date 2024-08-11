@@ -143,45 +143,43 @@ class SOTest {
 
 	@Test
 	void testFindCommentsFromSameUsersToQuestionsInTag() {
-		assertTimeout(Duration.ofSeconds(25), () -> {
-			try(Transaction tx = database.beginTx()){
-				long expectedElementCount;
-				try(Result testResult = tx.execute(
-						"""
-								MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q1:Question)<-[:COMMENTED_ON]-(u1c1:Comment)<-[:COMMENTED]-(u1:User)
-								MATCH                                   (q1:Question)<-[:COMMENTED_ON]-(u2c1:Comment)<-[:COMMENTED]-(u2:User)
-								MATCH                (t:Tag)<-[:TAGGED]-(q2:Question)<-[:COMMENTED_ON]-(u1c2:Comment)<-[:COMMENTED]-(u1:User)
-								MATCH                                   (q2:Question)<-[:COMMENTED_ON]-(u2c2:Comment)<-[:COMMENTED]-(u2:User)
-								WHERE q1 <> q2 AND u1 <> u2
-								RETURN u1c1, u2c1, u1c2, u2c2
-								""",
-						Map.of("tagName", "neo4j")
-				)){
-					expectedElementCount = testResult.stream().count();
-				}
-
-				Node tagNode = tx.findNode(TAG, "name", "neo4j");
-				GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId());
-				Set<List<Neo4jNode>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new Neo4jDB(tx), pattern));
-				assertNotEquals(0, results.size());
-				assertEquals(expectedElementCount, results.size());
-				for(List<Neo4jNode> result : results){
-					Neo4jNode user1Comment1 = result.get(0);
-					Neo4jNode user2Comment1 = result.get(1);
-					Neo4jNode user1Comment2 = result.get(2);
-					Neo4jNode user2Comment2 = result.get(3);
-					checkHasSingleRelationToSameNode(user1Comment1, user2Comment1, COMMENTED_ON);
-					checkHasSingleRelationToSameNode(user1Comment2, user2Comment2, COMMENTED_ON);
-					checkHasSingleRelationToSameNode(user1Comment1, user1Comment2, COMMENTED);
-					checkHasSingleRelationToSameNode(user2Comment1, user2Comment2, COMMENTED);
-
-					checkHasSingleRelationToDifferentNodes(user1Comment1, user2Comment1, COMMENTED);
-					checkHasSingleRelationToDifferentNodes(user1Comment2, user2Comment2, COMMENTED);
-					checkHasSingleRelationToDifferentNodes(user1Comment1, user1Comment2, COMMENTED_ON);
-					checkHasSingleRelationToDifferentNodes(user2Comment1, user2Comment2, COMMENTED_ON);
-				}
+		try(Transaction tx = database.beginTx()){
+			long expectedElementCount;
+			try(Result testResult = tx.execute(
+					"""
+							MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q1:Question)<-[:COMMENTED_ON]-(u1c1:Comment)<-[:COMMENTED]-(u1:User)
+							MATCH                                   (q1:Question)<-[:COMMENTED_ON]-(u2c1:Comment)<-[:COMMENTED]-(u2:User)
+							MATCH                (t:Tag)<-[:TAGGED]-(q2:Question)<-[:COMMENTED_ON]-(u1c2:Comment)<-[:COMMENTED]-(u1:User)
+							MATCH                                   (q2:Question)<-[:COMMENTED_ON]-(u2c2:Comment)<-[:COMMENTED]-(u2:User)
+							WHERE q1 <> q2 AND u1 <> u2
+							RETURN u1c1, u2c1, u1c2, u2c2
+							""",
+					Map.of("tagName", "neo4j")
+			)){
+				expectedElementCount = testResult.stream().count();
 			}
-		});
+
+			Node tagNode = tx.findNode(TAG, "name", "neo4j");
+			GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId());
+			Set<List<Neo4jNode>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new Neo4jDB(tx), pattern));
+			assertNotEquals(0, results.size());
+			assertEquals(expectedElementCount, results.size());
+			for(List<Neo4jNode> result : results){
+				Neo4jNode user1Comment1 = result.get(0);
+				Neo4jNode user2Comment1 = result.get(1);
+				Neo4jNode user1Comment2 = result.get(2);
+				Neo4jNode user2Comment2 = result.get(3);
+				checkHasSingleRelationToSameNode(user1Comment1, user2Comment1, COMMENTED_ON);
+				checkHasSingleRelationToSameNode(user1Comment2, user2Comment2, COMMENTED_ON);
+				checkHasSingleRelationToSameNode(user1Comment1, user1Comment2, COMMENTED);
+				checkHasSingleRelationToSameNode(user2Comment1, user2Comment2, COMMENTED);
+
+				checkHasSingleRelationToDifferentNodes(user1Comment1, user2Comment1, COMMENTED);
+				checkHasSingleRelationToDifferentNodes(user1Comment2, user2Comment2, COMMENTED);
+				checkHasSingleRelationToDifferentNodes(user1Comment1, user1Comment2, COMMENTED_ON);
+				checkHasSingleRelationToDifferentNodes(user2Comment1, user2Comment2, COMMENTED_ON);
+			}
+		}
 	}
 
 	private void checkHasSingleRelationToSameNode(Neo4jNode first, Neo4jNode second, RelType relationType) {
@@ -273,7 +271,7 @@ class SOTest {
 					.map(List::of)
 					.collect(Collectors.toSet());
 			}
-			GraphPattern pattern = createSelfAnswerPattern(tx.findNode(TAG, "name", "neo4j").getElementId());
+			GraphPattern pattern = assertTimeout(Duration.ofSeconds(1), () -> createSelfAnswerPattern(tx.findNode(TAG, "name", "neo4j").getElementId()));
 			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
 			assertNotEquals(0, result.size());
 			assertEquals(expectedResult, result);
