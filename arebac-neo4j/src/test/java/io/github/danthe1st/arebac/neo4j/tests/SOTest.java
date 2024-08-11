@@ -3,6 +3,17 @@ package io.github.danthe1st.arebac.neo4j.tests;
 import static io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.attribute;
 import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement.ID_KEY;
 import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator.EQUAL;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.ANSWER;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.COMMENT;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.QUESTION;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.TAG;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.USER;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType.ANSWERED;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType.ASKED;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType.COMMENTED;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType.COMMENTED_ON;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType.PROVIDED;
+import static io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType.TAGGED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -62,7 +73,7 @@ class SOTest {
 			Set<List<Neo4jNode>> results = GPEval.evaluate(dbAsGraph, pattern);
 			assertNotEquals(0, results.size());
 			Set<List<Neo4jNode>> expectedAnswers = new HashSet<>();
-			ResourceIterable<Relationship> rels = someUserNode.getRelationships(Direction.OUTGOING, Neo4JSetup.RelType.PROVIDED);
+			ResourceIterable<Relationship> rels = someUserNode.getRelationships(Direction.OUTGOING, PROVIDED);
 			for(Relationship relationship : rels){
 				Node otherNode = relationship.getOtherNode(someUserNode);
 				expectedAnswers.add(List.of(new Neo4jNode(otherNode)));
@@ -72,12 +83,12 @@ class SOTest {
 	}
 
 	private GraphPattern createFindAnswersPattern(String requestorId) {
-		GPNode requestor = new GPNode("requestor", Neo4JSetup.USER.name());
-		GPNode answer = new GPNode("answer", Neo4JSetup.ANSWER.name());
+		GPNode requestor = new GPNode("requestor", USER.name());
+		GPNode answer = new GPNode("answer", ANSWER.name());
 		return new GraphPattern(
 				new GPGraph(
 						List.of(requestor, answer),
-						List.of(new GPEdge(requestor, answer, null, Neo4JSetup.RelType.PROVIDED.name()))
+						List.of(new GPEdge(requestor, answer, null, PROVIDED.name()))
 				),
 				List.of(),
 				Map.of(requestor, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(requestorId)))),
@@ -132,43 +143,45 @@ class SOTest {
 
 	@Test
 	void testFindCommentsFromSameUsersToQuestionsInTag() {
-		try(Transaction tx = database.beginTx()){
-			long expectedElementCount;
-			try(Result testResult = tx.execute(
-					"""
-							MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q1:Question)<-[:COMMENTED_ON]-(u1c1:Comment)<-[:COMMENTED]-(u1:User)
-							MATCH                                   (q1:Question)<-[:COMMENTED_ON]-(u2c1:Comment)<-[:COMMENTED]-(u2:User)
-							MATCH                (t:Tag)<-[:TAGGED]-(q2:Question)<-[:COMMENTED_ON]-(u1c2:Comment)<-[:COMMENTED]-(u1:User)
-							MATCH                                   (q2:Question)<-[:COMMENTED_ON]-(u2c2:Comment)<-[:COMMENTED]-(u2:User)
-							WHERE q1 <> q2 AND u1 <> u2
-							RETURN u1c1, u2c1, u1c2, u2c2
-							""",
-					Map.of("tagName", "neo4j")
-			)){
-				expectedElementCount = testResult.stream().count();
-			}
+		assertTimeout(Duration.ofSeconds(25), () -> {
+			try(Transaction tx = database.beginTx()){
+				long expectedElementCount;
+				try(Result testResult = tx.execute(
+						"""
+								MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q1:Question)<-[:COMMENTED_ON]-(u1c1:Comment)<-[:COMMENTED]-(u1:User)
+								MATCH                                   (q1:Question)<-[:COMMENTED_ON]-(u2c1:Comment)<-[:COMMENTED]-(u2:User)
+								MATCH                (t:Tag)<-[:TAGGED]-(q2:Question)<-[:COMMENTED_ON]-(u1c2:Comment)<-[:COMMENTED]-(u1:User)
+								MATCH                                   (q2:Question)<-[:COMMENTED_ON]-(u2c2:Comment)<-[:COMMENTED]-(u2:User)
+								WHERE q1 <> q2 AND u1 <> u2
+								RETURN u1c1, u2c1, u1c2, u2c2
+								""",
+						Map.of("tagName", "neo4j")
+				)){
+					expectedElementCount = testResult.stream().count();
+				}
 
-			Node tagNode = tx.findNode(Neo4JSetup.TAG, "name", "neo4j");
-			GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId());
-			Set<List<Neo4jNode>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new Neo4jDB(tx), pattern));
-			assertNotEquals(0, results.size());
-			assertEquals(expectedElementCount, results.size());
-			for(List<Neo4jNode> result : results){
-				Neo4jNode user1Comment1 = result.get(0);
-				Neo4jNode user2Comment1 = result.get(1);
-				Neo4jNode user1Comment2 = result.get(2);
-				Neo4jNode user2Comment2 = result.get(3);
-				checkHasSingleRelationToSameNode(user1Comment1, user2Comment1, Neo4JSetup.RelType.COMMENTED_ON);
-				checkHasSingleRelationToSameNode(user1Comment2, user2Comment2, Neo4JSetup.RelType.COMMENTED_ON);
-				checkHasSingleRelationToSameNode(user1Comment1, user1Comment2, Neo4JSetup.RelType.COMMENTED);
-				checkHasSingleRelationToSameNode(user2Comment1, user2Comment2, Neo4JSetup.RelType.COMMENTED);
+				Node tagNode = tx.findNode(TAG, "name", "neo4j");
+				GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId());
+				Set<List<Neo4jNode>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new Neo4jDB(tx), pattern));
+				assertNotEquals(0, results.size());
+				assertEquals(expectedElementCount, results.size());
+				for(List<Neo4jNode> result : results){
+					Neo4jNode user1Comment1 = result.get(0);
+					Neo4jNode user2Comment1 = result.get(1);
+					Neo4jNode user1Comment2 = result.get(2);
+					Neo4jNode user2Comment2 = result.get(3);
+					checkHasSingleRelationToSameNode(user1Comment1, user2Comment1, COMMENTED_ON);
+					checkHasSingleRelationToSameNode(user1Comment2, user2Comment2, COMMENTED_ON);
+					checkHasSingleRelationToSameNode(user1Comment1, user1Comment2, COMMENTED);
+					checkHasSingleRelationToSameNode(user2Comment1, user2Comment2, COMMENTED);
 
-				checkHasSingleRelationToDifferentNodes(user1Comment1, user2Comment1, Neo4JSetup.RelType.COMMENTED);
-				checkHasSingleRelationToDifferentNodes(user1Comment2, user2Comment2, Neo4JSetup.RelType.COMMENTED);
-				checkHasSingleRelationToDifferentNodes(user1Comment1, user1Comment2, Neo4JSetup.RelType.COMMENTED_ON);
-				checkHasSingleRelationToDifferentNodes(user2Comment1, user2Comment2, Neo4JSetup.RelType.COMMENTED_ON);
+					checkHasSingleRelationToDifferentNodes(user1Comment1, user2Comment1, COMMENTED);
+					checkHasSingleRelationToDifferentNodes(user1Comment2, user2Comment2, COMMENTED);
+					checkHasSingleRelationToDifferentNodes(user1Comment1, user1Comment2, COMMENTED_ON);
+					checkHasSingleRelationToDifferentNodes(user2Comment1, user2Comment2, COMMENTED_ON);
+				}
 			}
-		}
+		});
 	}
 
 	private void checkHasSingleRelationToSameNode(Neo4jNode first, Neo4jNode second, RelType relationType) {
@@ -194,36 +207,36 @@ class SOTest {
 	}
 
 	private GraphPattern createCommentsToSameQuestionInTagPattern(String tagId) {
-		GPNode tag = new GPNode("tag", Neo4JSetup.TAG.name());
+		GPNode tag = new GPNode("tag", TAG.name());
 
-		GPNode user1 = new GPNode("user1", Neo4JSetup.USER.name());
-		GPNode user2 = new GPNode("user2", Neo4JSetup.USER.name());
+		GPNode user1 = new GPNode("user1", USER.name());
+		GPNode user2 = new GPNode("user2", USER.name());
 
-		GPNode question1 = new GPNode("question1", Neo4JSetup.QUESTION.name());
-		GPNode user1Comment1 = new GPNode("user1Comment1", Neo4JSetup.COMMENT.name());
-		GPNode user2Comment1 = new GPNode("user2Comment1", Neo4JSetup.COMMENT.name());
+		GPNode question1 = new GPNode("question1", QUESTION.name());
+		GPNode user1Comment1 = new GPNode("user1Comment1", COMMENT.name());
+		GPNode user2Comment1 = new GPNode("user2Comment1", COMMENT.name());
 
-		GPNode question2 = new GPNode("question2", Neo4JSetup.QUESTION.name());
-		GPNode user1Comment2 = new GPNode("user1Comment2", Neo4JSetup.COMMENT.name());
-		GPNode user2Comment2 = new GPNode("user2Comment2", Neo4JSetup.COMMENT.name());
+		GPNode question2 = new GPNode("question2", QUESTION.name());
+		GPNode user1Comment2 = new GPNode("user1Comment2", COMMENT.name());
+		GPNode user2Comment2 = new GPNode("user2Comment2", COMMENT.name());
 
 		GPGraph graph = new GPGraph(
 				List.of(
 						tag, user1, user2, question1, question2, user1Comment1, user1Comment2, user2Comment1, user2Comment2
 				),
 				List.of(
-						new GPEdge(question1, tag, null, Neo4JSetup.RelType.TAGGED.name()),
-						new GPEdge(question2, tag, null, Neo4JSetup.RelType.TAGGED.name()),
+						new GPEdge(question1, tag, null, TAGGED.name()),
+						new GPEdge(question2, tag, null, TAGGED.name()),
 
-						new GPEdge(user1, user1Comment1, null, Neo4JSetup.RelType.COMMENTED.name()),
-						new GPEdge(user1, user1Comment2, null, Neo4JSetup.RelType.COMMENTED.name()),
-						new GPEdge(user2, user2Comment1, null, Neo4JSetup.RelType.COMMENTED.name()),
-						new GPEdge(user2, user2Comment2, null, Neo4JSetup.RelType.COMMENTED.name()),
+						new GPEdge(user1, user1Comment1, null, COMMENTED.name()),
+						new GPEdge(user1, user1Comment2, null, COMMENTED.name()),
+						new GPEdge(user2, user2Comment1, null, COMMENTED.name()),
+						new GPEdge(user2, user2Comment2, null, COMMENTED.name()),
 
-						new GPEdge(user1Comment1, question1, null, Neo4JSetup.RelType.COMMENTED_ON.name()),
-						new GPEdge(user1Comment2, question2, null, Neo4JSetup.RelType.COMMENTED_ON.name()),
-						new GPEdge(user2Comment1, question1, null, Neo4JSetup.RelType.COMMENTED_ON.name()),
-						new GPEdge(user2Comment2, question2, null, Neo4JSetup.RelType.COMMENTED_ON.name())
+						new GPEdge(user1Comment1, question1, null, COMMENTED_ON.name()),
+						new GPEdge(user1Comment2, question2, null, COMMENTED_ON.name()),
+						new GPEdge(user2Comment1, question1, null, COMMENTED_ON.name()),
+						new GPEdge(user2Comment2, question2, null, COMMENTED_ON.name())
 				)
 		);
 		return new GraphPattern(
@@ -260,7 +273,7 @@ class SOTest {
 					.map(List::of)
 					.collect(Collectors.toSet());
 			}
-			GraphPattern pattern = createSelfAnswerPattern(tx.findNode(Neo4JSetup.TAG, "name", "neo4j").getElementId());
+			GraphPattern pattern = createSelfAnswerPattern(tx.findNode(TAG, "name", "neo4j").getElementId());
 			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
 			assertNotEquals(0, result.size());
 			assertEquals(expectedResult, result);
@@ -268,17 +281,17 @@ class SOTest {
 	}
 	
 	private GraphPattern createSelfAnswerPattern(String elementId) {
-		GPNode tagNode = new GPNode("tag", Neo4JSetup.TAG.name());
-		GPNode userNode = new GPNode("user", Neo4JSetup.USER.name());
-		GPNode questionNode = new GPNode("question", Neo4JSetup.QUESTION.name());
-		GPNode answerNode = new GPNode("answer", Neo4JSetup.ANSWER.name());
+		GPNode tagNode = new GPNode("tag", TAG.name());
+		GPNode userNode = new GPNode("user", USER.name());
+		GPNode questionNode = new GPNode("question", QUESTION.name());
+		GPNode answerNode = new GPNode("answer", ANSWER.name());
 		GPGraph graph = new GPGraph(
 				List.of(tagNode, userNode, questionNode, answerNode),
 				List.of(
-						new GPEdge(questionNode, tagNode, null, Neo4JSetup.RelType.TAGGED.name()),
-						new GPEdge(userNode, questionNode, null, Neo4JSetup.RelType.ASKED.name()),
-						new GPEdge(answerNode, questionNode, null, Neo4JSetup.RelType.ANSWERED.name()),
-						new GPEdge(userNode, answerNode, null, Neo4JSetup.RelType.PROVIDED.name())
+						new GPEdge(questionNode, tagNode, null, TAGGED.name()),
+						new GPEdge(userNode, questionNode, null, ASKED.name()),
+						new GPEdge(answerNode, questionNode, null, ANSWERED.name()),
+						new GPEdge(userNode, answerNode, null, PROVIDED.name())
 				)
 		);
 		
