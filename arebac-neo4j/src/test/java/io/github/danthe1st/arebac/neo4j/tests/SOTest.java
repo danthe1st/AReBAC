@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
@@ -142,7 +143,7 @@ class SOTest {
 							WHERE q1 <> q2 AND u1 <> u2
 							RETURN u1c1, u2c1, u1c2, u2c2
 							""",
-					Map.of("uID", 6692895, "tagName", "neo4j")
+					Map.of("tagName", "neo4j")
 			)){
 				expectedElementCount = testResult.stream().count();
 			}
@@ -239,5 +240,56 @@ class SOTest {
 				Map.of("firstUser", user1, "secondUser", user2)
 		);
 	}
+	
+	@Test
+	void testSelfAnswers() {
+		try(Transaction tx = database.beginTx()){
+			Set<List<Neo4jNode>> expectedResult;
+			try(Result testResult = tx.execute(
+					"""
+							MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q:Question)
+							MATCH (u:User)-[:ASKED]->(q:Question)<-[:ANSWERED]-(a:Answer)<-[:PROVIDED]-(u:User)
+							RETURN a
+							""",
+					Map.of("tagName", "neo4j")
+			)){
+				expectedResult = testResult
+					.stream()
+					.map(res -> (Node) res.get("a"))
+					.map(Neo4jNode::new)
+					.map(List::of)
+					.collect(Collectors.toSet());
+			}
+			GraphPattern pattern = createSelfAnswerPattern(tx.findNode(Neo4JSetup.TAG, "name", "neo4j").getElementId());
+			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
+			assertNotEquals(0, result.size());
+			assertEquals(expectedResult, result);
+		}
+	}
+	
+	private GraphPattern createSelfAnswerPattern(String elementId) {
+		GPNode tagNode = new GPNode("tag", Neo4JSetup.TAG.name());
+		GPNode userNode = new GPNode("user", Neo4JSetup.USER.name());
+		GPNode questionNode = new GPNode("question", Neo4JSetup.QUESTION.name());
+		GPNode answerNode = new GPNode("answer", Neo4JSetup.ANSWER.name());
+		GPGraph graph = new GPGraph(
+				List.of(tagNode, userNode, questionNode, answerNode),
+				List.of(
+						new GPEdge(questionNode, tagNode, null, Neo4JSetup.RelType.TAGGED.name()),
+						new GPEdge(userNode, questionNode, null, Neo4JSetup.RelType.ASKED.name()),
+						new GPEdge(answerNode, questionNode, null, Neo4JSetup.RelType.ANSWERED.name()),
+						new GPEdge(userNode, answerNode, null, Neo4JSetup.RelType.PROVIDED.name())
+				)
+		);
+		
+		return new GraphPattern(
+				graph,
+				List.of(),
+				Map.of(tagNode, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(elementId)))),
+				Map.of(),
+				List.of(answerNode), Map.of()
+		);
+	}
+	
 }
 
