@@ -21,4 +21,9 @@ public record GPEdge(
 		}
 		Objects.requireNonNull(edgeType);
 	}
+	
+	@Override
+	public boolean hasEdgeType(String edgeType) {
+		return this.edgeType().equals(edgeType);
+	}
 }

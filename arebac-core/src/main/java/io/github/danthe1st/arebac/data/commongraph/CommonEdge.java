@@ -12,5 +12,5 @@ public interface CommonEdge<N extends CommonNode> {
 	N target();
 	
 	String id();
-	String edgeType();
+	boolean hasEdgeType(String edgeType);
 }

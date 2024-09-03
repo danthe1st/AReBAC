@@ -1,6 +1,5 @@
 package io.github.danthe1st.arebac.neo4j.graph;
 
-import java.util.Iterator;
 import java.util.Objects;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
@@ -9,10 +8,8 @@ import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 
 public class Neo4jNode implements AttributedNode {
-	private static final String NODE_TYPE = "_NO_LABEL";
-
 	private final Node node;
-	
+
 	public Neo4jNode(Node node) {
 		this.node = node;
 	}
@@ -23,12 +20,8 @@ public class Neo4jNode implements AttributedNode {
 	}
 
 	@Override
-	public String nodeType() {
-		Iterator<Label> labelIt = node.getLabels().iterator();
-		if(labelIt.hasNext()){
-			return labelIt.next().name();
-		}
-		return NODE_TYPE;
+	public boolean hasNodeType(String nodeType) {
+		return node.hasLabel(Label.label(nodeType));
 	}
 
 	@Override

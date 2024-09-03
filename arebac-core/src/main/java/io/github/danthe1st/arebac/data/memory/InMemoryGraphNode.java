@@ -26,4 +26,9 @@ public record InMemoryGraphNode(
 	public AttributeValue<?> getAttribute(String key) {
 		return attributes().get(key);
 	}
+	
+	@Override
+	public boolean hasNodeType(String nodeType) {
+		return this.nodeType().equals(nodeType);
+	}
 }

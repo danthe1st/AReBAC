@@ -29,8 +29,8 @@ public class Neo4jEdge implements AttributedGraphEdge<Neo4jNode> {
 	}
 	
 	@Override
-	public String edgeType() {
-		return relationship.getType().name();
+	public boolean hasEdgeType(String edgeType) {
+		return relationship.getType().name().equals(edgeType);
 	}
 	
 	@Override
@@ -67,5 +67,4 @@ public class Neo4jEdge implements AttributedGraphEdge<Neo4jNode> {
 		Neo4jEdge other = (Neo4jEdge) obj;
 		return Objects.equals(relationship.getElementId(), other.relationship.getElementId());
 	}
-	
 }

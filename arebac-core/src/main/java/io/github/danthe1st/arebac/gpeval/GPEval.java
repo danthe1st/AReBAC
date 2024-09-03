@@ -310,8 +310,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	}
 
 	private boolean satisfiesRequirements(RelevantEdge currentEdge, E graphEdge, N neighbor) {
-		return currentEdge.edge.edgeType().equals(graphEdge.edgeType()) &&
-				currentEdge.otherNode.nodeType().equals(neighbor.nodeType()) &&
+		return graphEdge.hasEdgeType(currentEdge.edge.edgeType()) &&
+				neighbor.hasNodeType(currentEdge.otherNode.nodeType()) &&
 				checkAttributeRequirements(pattern.edgeRequirements().get(currentEdge.edge), graphEdge) &&
 				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor);
 	}

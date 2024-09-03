@@ -16,4 +16,9 @@ public record GPNode(
 		Objects.requireNonNull(id);
 		Objects.requireNonNull(nodeType);
 	}
+	
+	@Override
+	public boolean hasNodeType(String nodeType) {
+		return this.nodeType().equals(nodeType);
+	}
 }

@@ -27,4 +27,9 @@ public record InMemoryGraphEdge(
 	public AttributeValue<?> getAttribute(String key) {
 		return attributes().get(key);
 	}
+	
+	@Override
+	public boolean hasEdgeType(String edgeType) {
+		return this.edgeType().equals(edgeType);
+	}
 }
