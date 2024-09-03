@@ -68,8 +68,7 @@ class SOTest {
 		try(Transaction tx = database.beginTx()){
 			Neo4jDB dbAsGraph = new Neo4jDB(tx);
 			Node someUserNode = tx.findNode(Label.label("User"), "uuid", 6309);
-			String someUserId = someUserNode.getElementId();
-			GraphPattern pattern = createFindAnswersPattern(someUserId);
+			GraphPattern pattern = createFindAnswersPattern(6309);
 			Set<List<Neo4jNode>> results = GPEval.evaluate(dbAsGraph, pattern);
 			assertNotEquals(0, results.size());
 			Set<List<Neo4jNode>> expectedAnswers = new HashSet<>();
@@ -82,7 +81,7 @@ class SOTest {
 		}
 	}
 
-	private GraphPattern createFindAnswersPattern(String requestorId) {
+	private GraphPattern createFindAnswersPattern(int userUUID) {
 		GPNode requestor = new GPNode("requestor", USER.name());
 		GPNode answer = new GPNode("answer", ANSWER.name());
 		return new GraphPattern(
@@ -91,7 +90,7 @@ class SOTest {
 						List.of(new GPEdge(requestor, answer, null, PROVIDED.name()))
 				),
 				List.of(),
-				Map.of(requestor, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(requestorId)))),
+				Map.of(requestor, List.of(new AttributeRequirement("uuid", EQUAL, attribute(userUUID)))),
 				Map.of(),
 				List.of(answer), Map.of("requestor", requestor, "answer", answer)
 		);
@@ -128,7 +127,7 @@ class SOTest {
 				)
 		);
 
-		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(graph, createCommentsToSameQuestionInTagPattern(tag.id()));
+		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(graph, createCommentsToSameQuestionInTagPattern(ID_KEY, tag.id()));
 		assertEquals(4, results.size());
 		assertEquals(
 				Set.of(
@@ -159,8 +158,7 @@ class SOTest {
 				expectedElementCount = testResult.stream().count();
 			}
 
-			Node tagNode = tx.findNode(TAG, "name", "neo4j");
-			GraphPattern pattern = createCommentsToSameQuestionInTagPattern(tagNode.getElementId());
+			GraphPattern pattern = createCommentsToSameQuestionInTagPattern("name", "neo4j");
 			Set<List<Neo4jNode>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new Neo4jDB(tx), pattern));
 			assertNotEquals(0, results.size());
 			assertEquals(expectedElementCount, results.size());
@@ -204,7 +202,7 @@ class SOTest {
 		}
 	}
 
-	private GraphPattern createCommentsToSameQuestionInTagPattern(String tagId) {
+	private GraphPattern createCommentsToSameQuestionInTagPattern(String tagKey, String tagValue) {
 		GPNode tag = new GPNode("tag", TAG.name());
 
 		GPNode user1 = new GPNode("user1", USER.name());
@@ -244,14 +242,14 @@ class SOTest {
 						new MutualExclusionConstraint(question1, question2)
 				),
 				Map.of(
-						tag, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(tagId)))
+						tag, List.of(new AttributeRequirement(tagKey, EQUAL, attribute(tagValue)))
 				),
 				Map.of(),
 				List.of(user1Comment1, user2Comment1, user1Comment2, user2Comment2),
 				Map.of("firstUser", user1, "secondUser", user2)
 		);
 	}
-	
+
 	@Test
 	void testSelfAnswers() {
 		try(Transaction tx = database.beginTx()){
@@ -271,14 +269,14 @@ class SOTest {
 					.map(List::of)
 					.collect(Collectors.toSet());
 			}
-			GraphPattern pattern = assertTimeout(Duration.ofSeconds(1), () -> createSelfAnswerPattern(tx.findNode(TAG, "name", "neo4j").getElementId()));
+			GraphPattern pattern = assertTimeout(Duration.ofSeconds(1), () -> createSelfAnswerPattern("neo4j"));
 			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
 			assertNotEquals(0, result.size());
 			assertEquals(expectedResult, result);
 		}
 	}
-	
-	private GraphPattern createSelfAnswerPattern(String elementId) {
+
+	private GraphPattern createSelfAnswerPattern(String tagName) {
 		GPNode tagNode = new GPNode("tag", TAG.name());
 		GPNode userNode = new GPNode("user", USER.name());
 		GPNode questionNode = new GPNode("question", QUESTION.name());
@@ -292,15 +290,15 @@ class SOTest {
 						new GPEdge(userNode, answerNode, null, PROVIDED.name())
 				)
 		);
-		
+
 		return new GraphPattern(
 				graph,
 				List.of(),
-				Map.of(tagNode, List.of(new AttributeRequirement(ID_KEY, EQUAL, attribute(elementId)))),
+				Map.of(tagNode, List.of(new AttributeRequirement("name", EQUAL, attribute(tagName)))),
 				Map.of(),
 				List.of(answerNode), Map.of()
 		);
 	}
-	
+
 }
 

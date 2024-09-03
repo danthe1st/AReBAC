@@ -23,6 +23,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
+import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusionConstraint;
 
 /**
@@ -109,6 +110,12 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 					}
 					N graphNode = graph.findNodeById(value);
 
+					if(graphNode == null){
+						throw new NoResultException("Fixed node cannot be found");
+					}
+					candidates.put(patternNode, new HashSet<>(Set.of(graphNode)));
+				}else if(graph.isAttributeUniqueForNodeType(requirement.key(), patternNode.nodeType()) && requirement.operator() == AttributeRequirementOperator.EQUAL){
+					N graphNode = graph.getNodeByUniqueAttribute(patternNode.nodeType(), requirement.key(), requirement.value());
 					if(graphNode == null){
 						throw new NoResultException("Fixed node cannot be found");
 					}
