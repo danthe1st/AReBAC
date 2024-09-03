@@ -12,6 +12,7 @@
 	<modules>
 		<module>arebac-core</module>
 		<module>arebac-neo4j</module>
+		<module>arebac-jfr</module>
 	</modules>
 	<build>
 		<plugins>
