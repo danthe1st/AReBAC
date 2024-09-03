@@ -129,15 +129,7 @@ class SOTest {
 				)
 		);
 
-		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(new JFRRecordedGraphWrapper<>(graph), createCommentsToSameQuestionInTagPattern(ID_KEY, tag.id()))
-			.stream()
-			.map(
-					list -> list
-						.stream()
-						.map(JFRRecordedGraphNode::getInternalNode)
-						.toList()
-			)
-			.collect(Collectors.toSet());
+		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(graph, createCommentsToSameQuestionInTagPattern(ID_KEY, tag.id()));
 		assertEquals(4, results.size());
 		assertEquals(
 				Set.of(
@@ -169,14 +161,14 @@ class SOTest {
 			}
 
 			GraphPattern pattern = createCommentsToSameQuestionInTagPattern("name", "neo4j");
-			Set<List<Neo4jNode>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new Neo4jDB(tx), pattern));
+			Set<List<JFRRecordedGraphNode<Neo4jNode>>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new JFRRecordedGraphWrapper<>(new Neo4jDB(tx)), pattern));
 			assertNotEquals(0, results.size());
 			assertEquals(expectedElementCount, results.size());
-			for(List<Neo4jNode> result : results){
-				Neo4jNode user1Comment1 = result.get(0);
-				Neo4jNode user2Comment1 = result.get(1);
-				Neo4jNode user1Comment2 = result.get(2);
-				Neo4jNode user2Comment2 = result.get(3);
+			for(List<JFRRecordedGraphNode<Neo4jNode>> result : results){
+				Neo4jNode user1Comment1 = result.get(0).getInternalNode();
+				Neo4jNode user2Comment1 = result.get(1).getInternalNode();
+				Neo4jNode user1Comment2 = result.get(2).getInternalNode();
+				Neo4jNode user2Comment2 = result.get(3).getInternalNode();
 				checkHasSingleRelationToSameNode(user1Comment1, user2Comment1, COMMENTED_ON);
 				checkHasSingleRelationToSameNode(user1Comment2, user2Comment2, COMMENTED_ON);
 				checkHasSingleRelationToSameNode(user1Comment1, user1Comment2, COMMENTED);

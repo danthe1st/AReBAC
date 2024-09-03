@@ -271,9 +271,11 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		forwardCheckingEvent.begin();
 		
 		List<RelevantEdge> relevantEdges = getRelevantEdges(currentNode);
+		forwardCheckingEvent.setRelevantEdges(relevantEdges.size());
 		for(RelevantEdge relevantEdge : relevantEdges){
 			GPNode otherNode = relevantEdge.otherNode();
 			if(!assignments.containsKey(otherNode)){
+				forwardCheckingEvent.addUnknownEdge();
 				List<N> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge, forwardCheckingEvent);
 				forwardCheckingEvent.addNeighborsProcessed(neighbors.size());
 				Set<N> otherNodeCandidates = candidates.get(otherNode);
