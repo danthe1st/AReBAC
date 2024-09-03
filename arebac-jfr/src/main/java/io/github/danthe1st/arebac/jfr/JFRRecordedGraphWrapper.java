@@ -3,6 +3,7 @@ package io.github.danthe1st.arebac.jfr;
 import java.util.Collection;
 import java.util.Objects;
 
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
@@ -45,6 +46,16 @@ public class JFRRecordedGraphWrapper<N extends AttributedNode, E extends Attribu
 		event.setFoundEdgesCount(incomingEdges.size());
 		event.commit();
 		return incomingEdges.stream().map(JFRRecordedGraphEdge::new).toList();
+	}
+	
+	@Override
+	public boolean isAttributeUniqueForNodeType(String key, String nodeType) {
+		return graph.isAttributeUniqueForNodeType(key, nodeType);
+	}
+	
+	@Override
+	public JFRRecordedGraphNode<N> getNodeByUniqueAttribute(String nodeType, String key, AttributeValue<?> value) {
+		return new JFRRecordedGraphNode<>(graph.getNodeByUniqueAttribute(nodeType, key, value));
 	}
 	
 	@Override
