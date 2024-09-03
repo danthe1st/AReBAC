@@ -34,7 +34,7 @@ public class JFRRecordedGraphNode<N extends AttributedNode> implements Attribute
 		return attribute;
 	}
 	
-	N getInternalNode() {
+	public N getInternalNode() {
 		return node;
 	}
 	
