@@ -46,3 +46,17 @@ try(Transaction tx = database.beginTx()){
 	System.out.println(results);
 }
 ```
+
+### arebac-jfr
+
+The `arebac-jfr` module provides an `AttributedGraph` implementation wrapping an `AttributedGraph` and adding custom [JFR](https://openjdk.org/jeps/328) events on graph accesses. These events can be used to find out which graph accesses are relevant for performance, how often these take place and where.
+JFR events can be collected by starting Java with the `-XX:StartFlightRecording:filename=someRecording.jfr` JVM argument and can be analyized with [JDK Mission Control](https://openjdk.org/projects/jmc/).
+
+This module provides the following JFR events:
+- `io.github.danthe1st.arebac.jfr.events.FindEdgesEvent`: This event is fired when obtaining the edges of a node.
+- `io.github.danthe1st.arebac.jfr.events.FindNodeEvent`: This event is fired when looking up a node by its id.
+- `io.github.danthe1st.arebac.jfr.events.GetAttributeEvent`: This event is obtained when accessing an attribute.
+
+Aside from that, the GP-Eval implementation (in the `arebac-core` module) provides these JFR events:
+- `io.github.danthe1st.arebac.gpeval.FilterMutualExclusionConstraintEvent`: This event is fired during the "filter mutual exclusion constraints" step of GP-Eval.
+- `io.github.danthe1st.arebac.gpeval.ForwardCheckingEvent`: This event is fired during the forward-checking step of GP-Eval.
