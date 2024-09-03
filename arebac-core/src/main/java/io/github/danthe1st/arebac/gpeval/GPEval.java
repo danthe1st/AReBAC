@@ -265,6 +265,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	}
 
 	private boolean forwardChecking(GPNode currentNode, Map<GPNode, Set<GPNode>> incomingConflicts, Set<GPNode> outgoingConflicts) {
+		ForwardCheckingEvent forwardCheckingEvent = new ForwardCheckingEvent();
+		forwardCheckingEvent.begin();
 		List<RelevantEdge> relevantEdges = getRelevantEdges(currentNode);
 		for(RelevantEdge relevantEdge : relevantEdges){
 			GPNode otherNode = relevantEdge.otherNode();
@@ -290,6 +292,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 				}
 			}
 		}
+		forwardCheckingEvent.commit();
 
 		return true;
 	}
