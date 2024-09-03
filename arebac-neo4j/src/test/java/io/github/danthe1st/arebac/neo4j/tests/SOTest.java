@@ -39,6 +39,8 @@ import io.github.danthe1st.arebac.data.memory.InMemoryGraph;
 import io.github.danthe1st.arebac.data.memory.InMemoryGraphEdge;
 import io.github.danthe1st.arebac.data.memory.InMemoryGraphNode;
 import io.github.danthe1st.arebac.gpeval.GPEval;
+import io.github.danthe1st.arebac.jfr.JFRRecordedGraphNode;
+import io.github.danthe1st.arebac.jfr.JFRRecordedGraphWrapper;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType;
@@ -127,7 +129,15 @@ class SOTest {
 				)
 		);
 
-		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(graph, createCommentsToSameQuestionInTagPattern(ID_KEY, tag.id()));
+		Set<List<InMemoryGraphNode>> results = GPEval.evaluate(new JFRRecordedGraphWrapper<>(graph), createCommentsToSameQuestionInTagPattern(ID_KEY, tag.id()))
+			.stream()
+			.map(
+					list -> list
+						.stream()
+						.map(JFRRecordedGraphNode::getInternalNode)
+						.toList()
+			)
+			.collect(Collectors.toSet());
 		assertEquals(4, results.size());
 		assertEquals(
 				Set.of(
