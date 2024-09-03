@@ -16,17 +16,17 @@ public class GetAttributeEvent extends Event {
 
 	@Label("element ID")
 	@Description("ID of the node or edge")
-	String elementId;
+	private String elementId;
 
 	@Label("attribute name")
-	String attributeName;
+	private String attributeName;
 	
 	@Label("element is node")
 	@Description("true iff this event represents getting the attribute of a node")
-	boolean isNode;
+	private boolean isNode;
 	@Label("element is edge")
 	@Description("true iff this event represents getting the attribute of a edge")
-	boolean isEdge;
+	private boolean isEdge;
 	
 	public GetAttributeEvent(String elementId, String attributeName, ElementType type) {
 		this.elementId = elementId;

@@ -13,7 +13,7 @@ public class FindNodeEvent extends Event {
 	static final String NAME = "io.github.danthe1st.arebac.jfr.events.FindNodeEvent";
 
 	@Label("node ID")
-	String nodeId;
+	private String nodeId;
 
 	public FindNodeEvent(String nodeId) {
 		this.nodeId = nodeId;

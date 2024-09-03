@@ -15,16 +15,16 @@ public class FindEdgesEvent extends Event {
 	static final String NAME = "io.github.danthe1st.arebac.jfr.events.FindEdgesEvent";
 
 	@Label("node ID")
-	String nodeId;
+	private String nodeId;
 
 	@Label("outgoing")
-	boolean outgoing;
+	private boolean outgoing;
 	
 	@Label("incoming")
-	boolean incoming;
+	private boolean incoming;
 	
 	@Label("foundEdgesCount")
-	int foundEdgesCount;
+	private int foundEdgesCount;
 	
 	public FindEdgesEvent(String nodeId, Direction direction) {
 		this.nodeId = nodeId;

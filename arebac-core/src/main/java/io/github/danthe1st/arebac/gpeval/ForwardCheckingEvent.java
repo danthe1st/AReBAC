@@ -10,4 +10,19 @@ import jdk.jfr.Name;
 @Category("AReBAC")
 class ForwardCheckingEvent extends Event {
 	
+	@Name("valid neighbors")
+	@Description("the amount of neighbors processed that satisfy edge/attribute requirements")
+	private int validNeighborsProcessed;
+	
+	@Name("total neighbors")
+	@Description("the total amount of neighbors where edge/attribute requirements were checked")
+	private int neighborsTotal;
+	
+	void addNeighborsProcessed(int neighbors) {
+		this.validNeighborsProcessed += neighbors;
+	}
+	
+	void addNeighborsTotal(int neighbors) {
+		this.neighborsTotal += neighbors;
+	}
 }
