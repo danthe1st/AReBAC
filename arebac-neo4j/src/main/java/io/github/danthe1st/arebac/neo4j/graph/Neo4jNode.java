@@ -45,7 +45,7 @@ public class Neo4jNode implements AttributedNode {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(node.getElementId());
+		return Objects.hash(node);
 	}
 	
 	@Override
@@ -57,7 +57,7 @@ public class Neo4jNode implements AttributedNode {
 			return false;
 		}
 		Neo4jNode other = (Neo4jNode) obj;
-		return Objects.equals(node.getElementId(), other.node.getElementId());
+		return Objects.equals(node, other.node);
 	}
 	
 	@Override
