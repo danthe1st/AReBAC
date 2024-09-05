@@ -1,4 +1,4 @@
-module arebac.core {
+module io.github.danthe1st.arebac.core {
 	requires jdk.jfr;
 	
 	exports io.github.danthe1st.arebac.data.commongraph;
