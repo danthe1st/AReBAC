@@ -25,6 +25,8 @@ import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusionConstraint;
+import io.github.danthe1st.arebac.gpeval.events.FilterMutualExclusionConstraintsEvent;
+import io.github.danthe1st.arebac.gpeval.events.ForwardCheckingEvent;
 
 /**
  * Implementation of the GP-eval algorithm.

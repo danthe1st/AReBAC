@@ -1,4 +1,4 @@
-package io.github.danthe1st.arebac.gpeval;
+package io.github.danthe1st.arebac.gpeval.events;
 
 import jdk.jfr.Category;
 import jdk.jfr.Description;
@@ -8,7 +8,7 @@ import jdk.jfr.Name;
 @Name("io.github.danthe1st.arebac.gpeval.ForwardCheckingEvent")
 @Description("running forward checking")
 @Category("AReBAC")
-class ForwardCheckingEvent extends Event {
+public class ForwardCheckingEvent extends Event {
 	
 	@Name("validNeighbors")
 	@Description("the amount of neighbors processed that satisfy edge/attribute requirements")
@@ -26,19 +26,19 @@ class ForwardCheckingEvent extends Event {
 	@Description("the amount of unassigned graph pattern edges checked")
 	private int unknownEdges;
 	
-	void addNeighborsProcessed(int neighbors) {
+	public void addNeighborsProcessed(int neighbors) {
 		this.validNeighborsProcessed += neighbors;
 	}
 	
-	void addNeighborsTotal(int neighbors) {
+	public void addNeighborsTotal(int neighbors) {
 		this.neighborsTotal += neighbors;
 	}
 	
-	void setRelevantEdges(int relevantEdges) {
+	public void setRelevantEdges(int relevantEdges) {
 		this.relevantEdges = relevantEdges;
 	}
 	
-	void addUnknownEdge() {
+	public void addUnknownEdge() {
 		unknownEdges++;
 	}
 }
