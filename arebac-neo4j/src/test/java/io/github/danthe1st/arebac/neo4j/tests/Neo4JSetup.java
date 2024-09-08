@@ -1,17 +1,15 @@
 package io.github.danthe1st.arebac.neo4j.tests;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpClient.Redirect;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
@@ -39,7 +37,7 @@ public class Neo4JSetup {
 
 	private static GraphDatabaseService graphDb;
 
-	public static synchronized GraphDatabaseService createDatabase(Path dbDirectory, URI dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
+	public static synchronized GraphDatabaseService createDatabase(Path dbDirectory, URL dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
 		if(graphDb != null){
 			return graphDb;
 		}
@@ -69,27 +67,18 @@ public class Neo4JSetup {
 		return graphDb;
 	}
 
-	private static void loadDB(Path dbDirectory, URI dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
+	private static void loadDB(Path dbDirectory, URL dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
 		DatabaseLayout layout = DatabaseLayout.of(Neo4jLayout.of(dbDirectory), DB_NAME);
 		deleteRecursively(layout.databaseDirectory());
-		
+
 		Path download = Files.createTempFile("neo4j", ".dump");
 
-		try(PrintStream nullPrintStream = new PrintStream(OutputStream.nullOutputStream())){
+		try(PrintStream nullPrintStream = new PrintStream(OutputStream.nullOutputStream());
+				InputStream dumpInput = new BufferedInputStream(dumpLocation.openStream())){
 			Loader loader = new Loader(new DefaultFileSystemAbstraction(), nullPrintStream);
-			HttpResponse<Path> res = HttpClient
-				.newBuilder()
-				.followRedirects(Redirect.ALWAYS)
-				.build()
-				.send(
-						HttpRequest.newBuilder(dumpLocation)
-							.build(),
-						BodyHandlers.ofFile(download)
-				);
-			if(res.statusCode() != 200){
-				throw new IllegalStateException("invalid status code: " + res.statusCode());
-			}
-			loader.load(res.body(), layout, true, false, DumpFormatSelector::decompress);
+			
+			Files.copy(dumpInput, download, StandardCopyOption.REPLACE_EXISTING);
+			loader.load(download, layout, true, false, DumpFormatSelector::decompress);
 		}finally{
 			Files.delete(download);
 		}

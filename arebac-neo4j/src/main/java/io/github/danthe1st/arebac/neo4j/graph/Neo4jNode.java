@@ -11,7 +11,7 @@ public class Neo4jNode implements AttributedNode {
 	private final Node node;
 
 	public Neo4jNode(Node node) {
-		this.node = node;
+		this.node = Objects.requireNonNull(node);
 	}
 	
 	@Override
