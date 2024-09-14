@@ -317,7 +317,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			neighborFinder = AttributedGraphEdge::source;
 		}
 		graphEdges = Objects.requireNonNullElse(graphEdges, List.of());
-		Collection<N> neighborsSatisfyingRequirements = new ArrayList<>();
+		Collection<N> neighborsSatisfyingRequirements = new HashSet<>();
 		for(E graphEdge : graphEdges){
 			N neighbor = neighborFinder.apply(graphEdge);
 			if(satisfiesRequirements(relevantEdge, graphEdge, neighbor)){
