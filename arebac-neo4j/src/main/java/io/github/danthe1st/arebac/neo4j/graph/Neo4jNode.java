@@ -58,7 +58,8 @@ public class Neo4jNode implements AttributedNode {
 			return false;
 		}
 		Neo4jNode other = (Neo4jNode) obj;
-		return Objects.equals(node, other.node);
+		return node.getId() == other.node.getId();
+//		return Objects.equals(node, other.node);
 	}
 	
 	@Override
