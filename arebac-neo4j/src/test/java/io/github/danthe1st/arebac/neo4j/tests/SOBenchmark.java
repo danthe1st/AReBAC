@@ -15,14 +15,16 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-@Warmup(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 6, timeUnit = TimeUnit.SECONDS)
+@Fork(3)
 public class SOBenchmark {
 	
 	@Benchmark
