@@ -44,7 +44,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	private final Map<GPNode, Set<GPNode>> mutualExclusionConstraints;
 
 	// node in pattern -> list of nodes in graph
-	private Map<GPNode, Set<N>> candidates = new HashMap<>();
+	private Map<GPNode, List<N>> candidates = new HashMap<>();
 
 	// node in pattern -> node in graph
 	private Map<GPNode, N> assignments = new HashMap<>();
@@ -79,7 +79,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		this.mutualExclusionConstraints = Map.copyOf(exclusionConstraints);
 	}
 
-	private GPEval(AttributedGraph<N, E> graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, Set<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results) {
+	private GPEval(AttributedGraph<N, E> graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, List<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results) {
 		this.graph = graph;
 		this.pattern = pattern;
 		this.mutualExclusionConstraints = mutualExclusionConstraints;
@@ -115,22 +115,22 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 					if(graphNode == null){
 						throw new NoResultException("Fixed node cannot be found");
 					}
-					candidates.put(patternNode, new HashSet<>(Set.of(graphNode)));
+					candidates.put(patternNode, new ArrayList<>(List.of(graphNode)));
 				}else if(graph.isAttributeUniqueForNodeType(requirement.key(), patternNode.nodeType()) && requirement.operator() == AttributeRequirementOperator.EQUAL){
 					N graphNode = graph.getNodeByUniqueAttribute(patternNode.nodeType(), requirement.key(), requirement.value());
 					if(graphNode == null){
 						throw new NoResultException("Fixed node cannot be found");
 					}
-					candidates.put(patternNode, new HashSet<>(Set.of(graphNode)));
+					candidates.put(patternNode, new ArrayList<>(List.of(graphNode)));
 				}
 			}
 		}
 	}
 
 	private void checkRequirementsForFixedVertices() throws NoResultException {
-		for(Map.Entry<GPNode, Set<N>> assignedNodeEntry : candidates.entrySet()){
+		for(Map.Entry<GPNode, List<N>> assignedNodeEntry : candidates.entrySet()){
 			GPNode patternNode = assignedNodeEntry.getKey();
-			Set<N> graphNodes = assignedNodeEntry.getValue();
+			List<N> graphNodes = assignedNodeEntry.getValue();
 			for(Iterator<N> graphNodeIterator = graphNodes.iterator(); graphNodeIterator.hasNext();){
 				N graphNode = graphNodeIterator.next();
 				if(!checkRequirementsForNode(patternNode, graphNode)){
@@ -169,17 +169,17 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		Set<GPNode> outgoingConflicts = new HashSet<>();
 
 		GPNode currentNode = pickNextNode();
-		Set<N> currentNodeCandidates = candidates.get(currentNode);
+		List<N> currentNodeCandidates = candidates.get(currentNode);
 		Set<GPNode> exclusionConstraints = mutualExclusionConstraints.get(currentNode);
 		if(exclusionConstraints != null){
 			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, Objects.requireNonNullElse(incomingConflicts.get(currentNode), new HashSet<>()));
 		}
 		for(N candidateNode : currentNodeCandidates){
-			Map<GPNode, Set<N>> newCandidates = candidates
+			Map<GPNode, List<N>> newCandidates = candidates
 				.entrySet()
 				.stream()
 				.filter(entry -> !entry.getKey().equals(currentNode))
-				.collect(Collectors.toMap(Map.Entry::getKey, entry -> new HashSet<>(entry.getValue())));
+				.collect(Collectors.toMap(Map.Entry::getKey, entry -> new ArrayList<>(entry.getValue())));
 			Map<GPNode, N> newAssignments = new HashMap<>(assignments);
 			newAssignments.put(currentNode, candidateNode);
 			Map<GPNode, Set<GPNode>> newIncomingConflicts = incomingConflicts// deep copy
@@ -233,7 +233,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	private GPNode pickNextNode() {
 		GPNode candidate = null;
 		int numberOfPossibilities = Integer.MAX_VALUE;
-		for(Entry<GPNode, Set<N>> candidateEntry : candidates.entrySet()){
+		for(Entry<GPNode, List<N>> candidateEntry : candidates.entrySet()){
 			int possibilities = candidateEntry.getValue().size();
 			GPNode potentialCandidate = candidateEntry.getKey();
 			if(assignments.containsKey(potentialCandidate)){
@@ -248,7 +248,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return candidate;
 	}
 
-	private void filterMutualExclusionConstraints(Set<N> candidatesForNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts) {
+	private void filterMutualExclusionConstraints(List<N> candidatesForNode, Set<GPNode> exclusionConstraints, Set<GPNode> incomingConflicts) {
 		FilterMutualExclusionConstraintsEvent event = new FilterMutualExclusionConstraintsEvent();
 		event.begin();
 		for(Iterator<N> it = candidatesForNode.iterator(); it.hasNext();){
@@ -271,16 +271,16 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	private boolean forwardChecking(GPNode currentNode, Map<GPNode, Set<GPNode>> incomingConflicts, Set<GPNode> outgoingConflicts) {
 		ForwardCheckingEvent forwardCheckingEvent = new ForwardCheckingEvent();
 		forwardCheckingEvent.begin();
-		
+
 		List<RelevantEdge> relevantEdges = getRelevantEdges(currentNode);
 		forwardCheckingEvent.setRelevantEdges(relevantEdges.size());
 		for(RelevantEdge relevantEdge : relevantEdges){
 			GPNode otherNode = relevantEdge.otherNode();
 			if(!assignments.containsKey(otherNode)){
 				forwardCheckingEvent.addUnknownEdge();
-				List<N> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge, forwardCheckingEvent);
+				Collection<N> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge, forwardCheckingEvent);
 				forwardCheckingEvent.addNeighborsProcessed(neighbors.size());
-				Set<N> otherNodeCandidates = candidates.get(otherNode);
+				List<N> otherNodeCandidates = candidates.get(otherNode);
 				assert otherNodeCandidates == null || !otherNodeCandidates.isEmpty();// I think this shouldn't happen, null is written as empty in the paper
 				Set<GPNode> otherNodeIncomingConflicts = incomingConflicts.computeIfAbsent(otherNode, n -> new HashSet<>());
 				Set<GPNode> currentNodeIncomingConflicts = incomingConflicts.computeIfAbsent(currentNode, n -> new HashSet<>());
@@ -289,7 +289,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 					otherNodeIncomingConflicts.add(currentNode);
 				}
 				if(otherNodeCandidates == null){
-					otherNodeCandidates = new HashSet<>(neighbors);
+					otherNodeCandidates = new ArrayList<>(neighbors);
 					candidates.put(otherNode, otherNodeCandidates);
 				}else{
 					otherNodeCandidates.retainAll(neighbors);
@@ -305,7 +305,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return true;
 	}
 
-	private List<N> getNeighborsSatisfyingEdgeAndAttributeRequirements(GPNode currentNode, RelevantEdge relevantEdge, ForwardCheckingEvent forwardCheckingEvent) {
+	private Collection<N> getNeighborsSatisfyingEdgeAndAttributeRequirements(GPNode currentNode, RelevantEdge relevantEdge, ForwardCheckingEvent forwardCheckingEvent) {
 		N currentNodeInDB = assignments.get(currentNode);
 		Collection<E> graphEdges;
 		Function<E, N> neighborFinder;
@@ -317,16 +317,16 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			neighborFinder = AttributedGraphEdge::source;
 		}
 		graphEdges = Objects.requireNonNullElse(graphEdges, List.of());
-		List<N> neighborsSatisfyingRequirements = new ArrayList<>();
+		Collection<N> neighborsSatisfyingRequirements = new ArrayList<>();
 		for(E graphEdge : graphEdges){
 			N neighbor = neighborFinder.apply(graphEdge);
 			if(satisfiesRequirements(relevantEdge, graphEdge, neighbor)){
 				neighborsSatisfyingRequirements.add(neighbor);
 			}
 		}
-		
+
 		forwardCheckingEvent.addNeighborsTotal(graphEdges.size());
-		
+
 		return neighborsSatisfyingRequirements;
 	}
 

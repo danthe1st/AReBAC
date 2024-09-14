@@ -45,7 +45,8 @@ public class Neo4jNode implements AttributedNode {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(node);
+		return (int) node.getId();
+//		return Objects.hash(node);
 	}
 	
 	@Override

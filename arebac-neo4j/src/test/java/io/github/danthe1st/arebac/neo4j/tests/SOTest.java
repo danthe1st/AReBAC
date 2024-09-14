@@ -46,6 +46,8 @@ import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.dbms.archive.IncorrectFormat;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -142,8 +144,9 @@ class SOTest {
 
 	}
 
-	@Test
-	void testFindCommentsFromSameUsersToQuestionsInTag() {
+	@ParameterizedTest
+	@ValueSource(strings = { "cypher", "neo4j" })
+	void testFindCommentsFromSameUsersToQuestionsInTag(String tagName) {
 		try(Transaction tx = database.beginTx()){
 			long expectedElementCount;
 			try(Result testResult = tx.execute(
@@ -155,12 +158,12 @@ class SOTest {
 							WHERE q1 <> q2 AND u1 <> u2
 							RETURN u1c1, u2c1, u1c2, u2c2
 							""",
-					Map.of("tagName", "neo4j")
+					Map.of("tagName", tagName)
 			)){
 				expectedElementCount = testResult.stream().count();
 			}
 
-			GraphPattern pattern = createCommentsToSameQuestionInTagPattern("name", "neo4j");
+			GraphPattern pattern = createCommentsToSameQuestionInTagPattern("name", tagName);
 			Set<List<JFRRecordedGraphNode<Neo4jNode>>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new JFRRecordedGraphWrapper<>(new Neo4jDB(tx)), pattern));
 			assertNotEquals(0, results.size());
 			assertEquals(expectedElementCount, results.size());
@@ -204,7 +207,7 @@ class SOTest {
 		}
 	}
 
-	private GraphPattern createCommentsToSameQuestionInTagPattern(String tagKey, String tagValue) {
+	public static GraphPattern createCommentsToSameQuestionInTagPattern(String tagKey, String tagValue) {
 		GPNode tag = new GPNode("tag", TAG.name());
 
 		GPNode user1 = new GPNode("user1", USER.name());
@@ -301,6 +304,5 @@ class SOTest {
 				List.of(answerNode), Map.of()
 		);
 	}
-
 }
 
