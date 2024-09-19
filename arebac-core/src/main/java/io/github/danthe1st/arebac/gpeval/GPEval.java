@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeAware;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
@@ -175,22 +174,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, Objects.requireNonNullElse(incomingConflicts.get(currentNode), new ArrayList<>()));
 		}
 		for(N candidateNode : currentNodeCandidates){
-			Map<GPNode, List<N>> newCandidates = candidates
-				.entrySet()
-				.stream()
-				.filter(entry -> !entry.getKey().equals(currentNode))
-				.collect(Collectors.toMap(Map.Entry::getKey, entry -> new ArrayList<>(entry.getValue())));
+			Map<GPNode, List<N>> newCandidates = deepCopyExceptKey(candidates, currentNode);
 			Map<GPNode, N> newAssignments = new HashMap<>(assignments);
 			newAssignments.put(currentNode, candidateNode);
-			Map<GPNode, List<GPNode>> newIncomingConflicts = incomingConflicts// deep copy
-				.entrySet()
-				.stream()
-				.collect(
-						Collectors.toMap(
-								Map.Entry::getKey,
-								e -> new ArrayList<>(e.getValue())
-						)
-				);
+			Map<GPNode, List<GPNode>> newIncomingConflicts = deepCopy(incomingConflicts);
 			GPEval<N, E> child = new GPEval<>(graph, pattern, mutualExclusionConstraints, newCandidates, newAssignments, results);
 			boolean valid = child.forwardChecking(currentNode, newIncomingConflicts, outgoingConflicts);
 			if(valid){
@@ -221,6 +208,32 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			}
 		}
 		return conflicts;
+	}
+
+	private <K, V> Map<K, List<V>> deepCopyExceptKey(Map<K, List<V>> multimap, K keyToSkip) {
+		Map<K, List<V>> result = HashMap.newHashMap(multimap.size());
+		for(Entry<K, List<V>> entry : multimap.entrySet()){
+			if(!entry.getKey().equals(keyToSkip)){
+				List<V> newInnerList = new ArrayList<>();
+				for(V innerListItem : entry.getValue()){
+					newInnerList.add(innerListItem);
+				}
+				result.put(entry.getKey(), newInnerList);
+			}
+		}
+		return result;
+	}
+
+	private <K, V> Map<K, List<V>> deepCopy(Map<K, List<V>> multimap) {
+		Map<K, List<V>> result = HashMap.newHashMap(multimap.size());
+		for(Entry<K, List<V>> entry : multimap.entrySet()){
+			List<V> newInnerList = new ArrayList<>();
+			for(V innerListItem : entry.getValue()){
+				newInnerList.add(innerListItem);
+			}
+			result.put(entry.getKey(), newInnerList);
+		}
+		return result;
 	}
 
 	private void addAllIncomingConflictsForNode(Map<GPNode, List<GPNode>> incomingConflicts, Set<GPNode> conflicts, GPNode currentNode) {
