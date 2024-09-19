@@ -207,7 +207,7 @@ class SOTest {
 		}
 	}
 
-	public static GraphPattern createCommentsToSameQuestionInTagPattern(String tagKey, String tagValue) {
+	static GraphPattern createCommentsToSameQuestionInTagPattern(String tagKey, String tagValue) {
 		GPNode tag = new GPNode("tag", TAG.name());
 
 		GPNode user1 = new GPNode("user1", USER.name());
