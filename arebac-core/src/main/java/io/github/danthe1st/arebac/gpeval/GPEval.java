@@ -214,11 +214,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		Map<K, List<V>> result = HashMap.newHashMap(multimap.size());
 		for(Entry<K, List<V>> entry : multimap.entrySet()){
 			if(!entry.getKey().equals(keyToSkip)){
-				List<V> newInnerList = new ArrayList<>();
-				for(V innerListItem : entry.getValue()){
-					newInnerList.add(innerListItem);
-				}
-				result.put(entry.getKey(), newInnerList);
+				result.put(entry.getKey(), new ArrayList<>(entry.getValue()));
 			}
 		}
 		return result;
@@ -227,11 +223,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	private <K, V> Map<K, List<V>> deepCopy(Map<K, List<V>> multimap) {
 		Map<K, List<V>> result = HashMap.newHashMap(multimap.size());
 		for(Entry<K, List<V>> entry : multimap.entrySet()){
-			List<V> newInnerList = new ArrayList<>();
-			for(V innerListItem : entry.getValue()){
-				newInnerList.add(innerListItem);
-			}
-			result.put(entry.getKey(), newInnerList);
+			result.put(entry.getKey(), new ArrayList<>(entry.getValue()));
 		}
 		return result;
 	}
