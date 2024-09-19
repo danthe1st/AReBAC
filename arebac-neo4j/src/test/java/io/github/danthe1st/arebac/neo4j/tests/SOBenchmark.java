@@ -25,9 +25,8 @@ import org.openjdk.jmh.infra.Blackhole;
 @Warmup(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 6, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
-//@Fork(value = 1, jvmArgs = "-agentpath:/home/dan1st/Downloads/async-profiler/async-profiler-3.0-linux-x64/lib/libasyncProfiler.so=start,event=cpu,file=profile.html")
 public class SOBenchmark {
-
+	
 	@Benchmark
 	public void gpEval(SOBenchmarkState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -36,8 +35,8 @@ public class SOBenchmark {
 			result.forEach(bh::consume);
 		}
 	}
-
-//	@Benchmark
+	
+	@Benchmark
 	public void neo4j(SOBenchmarkState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
 			try(Result result = tx.execute(
@@ -55,13 +54,13 @@ public class SOBenchmark {
 			}
 		}
 	}
-
+	
 	@State(Scope.Thread)
 	public static class SOBenchmarkState {
 		private final List<String> tagNames = List.of("neo4j", "cypher", "java");
 		private int currentTagIndex = 0;
 		private final GraphDatabaseService database;
-
+		
 		public SOBenchmarkState() {
 			try{
 				database = SOSetup.getDatabase();
@@ -69,7 +68,7 @@ public class SOBenchmark {
 				throw new RuntimeException(e);
 			}
 		}
-
+		
 		private String nextTagName() {
 			int index = currentTagIndex;
 			currentTagIndex = (currentTagIndex + 1) % tagNames.size();
