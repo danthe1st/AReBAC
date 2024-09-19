@@ -1,7 +1,8 @@
 package io.github.danthe1st.arebac.neo4j.graph;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.stream.Stream;
+import java.util.List;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
@@ -9,6 +10,7 @@ import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.ResourceIterable;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.schema.ConstraintDefinition;
 import org.neo4j.graphdb.schema.ConstraintType;
@@ -36,9 +38,13 @@ public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 	}
 	
 	private Collection<Neo4jEdge> findEdges(Neo4jNode node, Direction direction) {
-		try(Stream<Relationship> stream = node.getDBNode().getRelationships(direction).stream()){
-			return stream.map(Neo4jEdge::new).toList();
+		List<Neo4jEdge> edges = new ArrayList<>();
+		try(ResourceIterable<Relationship> relationships = node.getDBNode().getRelationships(direction)){
+			for(Relationship relationship : relationships){
+				edges.add(new Neo4jEdge(relationship));
+			}
 		}
+		return edges;
 	}
 	
 	@Override
