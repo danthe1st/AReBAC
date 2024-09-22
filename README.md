@@ -61,6 +61,6 @@ Aside from that, the GP-Eval implementation (in the `arebac-core` module) provid
 - `io.github.danthe1st.arebac.gpeval.events.FilterMutualExclusionConstraintEvent`: This event is fired during the "filter mutual exclusion constraints" step of GP-Eval.
 - `io.github.danthe1st.arebac.gpeval.events.ForwardCheckingEvent`: This event is fired during the forward-checking step of GP-Eval.
 
-# License
+## License
 
 This project is available under both the MIT and GPL-3.0 license. Users can choose whichever license they prefer.
