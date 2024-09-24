@@ -87,7 +87,7 @@ public class AirbnbBenchmark {
 		}
 		
 		public GraphPattern nextHostPattern() {
-			return Scenario1.createAuthorizedCetAllReviewsFromHostGraphPattern(nextHostId());
+			return Scenario1Test.createAuthorizedCetAllReviewsFromHostGraphPattern(nextHostId());
 		}
 		
 		public String nextHostId() {
@@ -97,7 +97,7 @@ public class AirbnbBenchmark {
 		}
 		
 		public GraphPattern nextReviewerPattern() {
-			return Scenario1.createAuthorizedGetAllReviewsFromReviewerGraphPattern(nextReviewerId());
+			return Scenario1Test.createAuthorizedGetAllReviewsFromReviewerGraphPattern(nextReviewerId());
 		}
 		
 		public String nextReviewerId() {

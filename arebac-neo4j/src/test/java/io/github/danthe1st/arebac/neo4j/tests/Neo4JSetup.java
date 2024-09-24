@@ -35,12 +35,7 @@ public class Neo4JSetup {
 	public static Label ANSWER = Label.label("Answer");
 	public static Label COMMENT = Label.label("Comment");
 
-	private static GraphDatabaseService graphDb;
-
 	public static synchronized GraphDatabaseService createDatabase(Path dbDirectory, URL dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
-		if(graphDb != null){
-			return graphDb;
-		}
 		boolean databaseExists = Files.exists(dbDirectory);
 		DatabaseManagementService databaseManagementService = createManagementService(dbDirectory);
 		if(!databaseExists){
@@ -63,7 +58,6 @@ public class Neo4JSetup {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			service.shutdown();
 		}));
-		Neo4JSetup.graphDb = graphDb;
 		return graphDb;
 	}
 
