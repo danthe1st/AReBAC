@@ -1,4 +1,4 @@
-package io.github.danthe1st.arebac.neo4j.tests;
+package io.github.danthe1st.arebac.neo4j.tests.stackoverflow;
 
 import static io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.attribute;
 import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement.ID_KEY;

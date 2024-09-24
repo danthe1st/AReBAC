@@ -1,4 +1,4 @@
-package io.github.danthe1st.arebac.neo4j.tests;
+package io.github.danthe1st.arebac.neo4j.tests.stackoverflow;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

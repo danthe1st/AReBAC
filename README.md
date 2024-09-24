@@ -64,3 +64,5 @@ Aside from that, the GP-Eval implementation (in the `arebac-core` module) provid
 ## License
 
 This project is available under both the MIT and GPL-3.0 license. Users can choose whichever license they prefer.
+
+Specific files or directories may be subject different licenses. In this case, the license is available in a `LICENSE` or `NOTICE` file of the directory in question or a parent directory.
