@@ -31,7 +31,7 @@ import org.neo4j.graphdb.ResourceIterable;
 import org.neo4j.graphdb.Transaction;
 
 /*
- * The idea/scenario this file is based on was provided by the Institut für anwendungsorientierte Wissensverarbeitung at Johannes Kepler University Linz.
+ * The idea/scenario/policy this file is based on was provided by the Institut für anwendungsorientierte Wissensverarbeitung at Johannes Kepler University Linz.
  * The source code was written by Daniel Schmid.
  */
 class Scenario1Test {
