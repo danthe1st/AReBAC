@@ -71,7 +71,7 @@ class Scenario2Test {
 		}
 	}
 
-	private GraphPattern editListingInNeighborhoodPattern(String subjectId, String neighborhoodId) {
+	static GraphPattern editListingInNeighborhoodPattern(String subjectId, String neighborhoodId) {
 		GraphPattern policy = editOwnListingPattern(subjectId);
 
 		GPNode listing = new GPNode("listing", AirbnbSetup.LISTING);
@@ -89,7 +89,7 @@ class Scenario2Test {
 		return Weaving.combinePatterns(List.of(policy, query));
 	}
 
-	private GraphPattern editOwnListingPattern(String subjectId) {
+	private static GraphPattern editOwnListingPattern(String subjectId) {
 		GPNode subject = new GPNode("host", AirbnbSetup.HOST);
 		GPNode listing = new GPNode("listing", AirbnbSetup.LISTING);
 		return new GraphPattern(
