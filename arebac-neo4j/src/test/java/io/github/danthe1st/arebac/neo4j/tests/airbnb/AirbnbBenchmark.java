@@ -115,7 +115,7 @@ public class AirbnbBenchmark {
 			Result result = tx.execute("""
 					MATCH (h: Host) -[: HOSTS]-> (l: Listing) -[: IN_NEIGHBORHOOD]-> (n: Neighborhood)
 					WHERE h.host_id = $hostId AND n.neighborhood_id = $neighborhoodId
-					RETURN r
+					RETURN l
 					""", Map.of("hostId", id.subjectId(), "neighborhoodId", id.neighborhoodId()));
 			
 			result.forEachRemaining(bh::consume);
