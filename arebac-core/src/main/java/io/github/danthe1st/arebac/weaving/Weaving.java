@@ -33,7 +33,6 @@ public final class Weaving {
 
 	private GraphPattern run() {
         findEquivalences();
-		// TODO if needed: combined pattern has all categories of each single pattern (currently there are no categories)
 		LinkedHashMap<EdgeInGraphPattern, GPEdge> edgeMapping = createEdges();
 		GPGraph graph = new GPGraph(new ArrayList<>(new HashSet<>(vertexToNodes.values())), new ArrayList<>(edgeMapping.values()));
 		List<MutualExclusionConstraint> mutualExclusionConstraints = createMutualExclusionConstraints();

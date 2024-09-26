@@ -27,8 +27,6 @@ public record GraphPattern(
 		List<GPNode> returnedNodes,
 		Map<String, GPNode> actorsToNodes) {
 	
-	// TODO figure out whether categories are necessary and (if so) add them
-	
 	public GraphPattern {
 		Objects.requireNonNull(graph);
 		Objects.requireNonNull(mutualExclusionConstraints);
