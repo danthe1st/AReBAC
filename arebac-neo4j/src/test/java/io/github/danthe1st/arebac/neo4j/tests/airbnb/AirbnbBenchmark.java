@@ -27,7 +27,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Warmup(iterations = 4, time = 3, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 4, time = 3, timeUnit = TimeUnit.SECONDS)
 public class AirbnbBenchmark {
-	
+
 	@Benchmark
 	public void scenario1GetReviewsFromHostGPEvalWithWeaving(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -36,7 +36,7 @@ public class AirbnbBenchmark {
 			result.forEach(bh::consume);
 		}
 	}
-	
+
 	@Benchmark
 	public void scenario1GetReviewsFromHostGPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -45,7 +45,7 @@ public class AirbnbBenchmark {
 			result.forEach(bh::consume);
 		}
 	}
-	
+
 	@Benchmark
 	public void scenario1GetReviewsFromHostNeo4J(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -54,11 +54,11 @@ public class AirbnbBenchmark {
 					WHERE h.host_id="$hostId"
 					RETURN r1,r2
 					""", Map.of("hostId", state.hostPatternInfo.nextId()));
-			
+
 			result.forEachRemaining(bh::consume);
 		}
 	}
-	
+
 	@Benchmark
 	public void scenario1GetReviewsFromReviewerGPEvalWithWeaving(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -67,7 +67,7 @@ public class AirbnbBenchmark {
 			result.forEach(bh::consume);
 		}
 	}
-	
+
 	@Benchmark
 	public void scenario1GetReviewsFromReviewerGPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -76,7 +76,7 @@ public class AirbnbBenchmark {
 			result.forEach(bh::consume);
 		}
 	}
-	
+
 	@Benchmark
 	public void scenario1GetReviewsFromReviewerNeo4J(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -85,11 +85,11 @@ public class AirbnbBenchmark {
 					WHERE r.reviewer_id="REVIEWER_ID"
 					RETURN r
 					""", Map.of("hostId", state.reviewerPatternInfo.nextId()));
-			
+
 			result.forEachRemaining(bh::consume);
 		}
 	}
-	
+
 	@Benchmark
 	public void scenario2GPEvalWithWeaving(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -98,7 +98,7 @@ public class AirbnbBenchmark {
 			result.forEach(bh::consume);
 		}
 	}
-	
+
 	@Benchmark
 	public void scenario2GPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -107,7 +107,7 @@ public class AirbnbBenchmark {
 			result.forEach(bh::consume);
 		}
 	}
-	
+
 	@Benchmark
 	public void scenario2Neo4J(AirbnbState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
@@ -117,18 +117,18 @@ public class AirbnbBenchmark {
 					WHERE h.host_id = $hostId AND n.neighborhood_id = $neighborhoodId
 					RETURN l
 					""", Map.of("hostId", id.subjectId(), "neighborhoodId", id.neighborhoodId()));
-			
+
 			result.forEachRemaining(bh::consume);
 		}
 	}
-	
+
 	@State(Scope.Thread)
 	public static class AirbnbState {
 		private final GraphDatabaseService database;
 		private final PatternInfo<String> hostPatternInfo;
 		private final PatternInfo<String> reviewerPatternInfo;
 		private final PatternInfo<Scenario2Id> scenario2PatternInfo;
-		
+
 		public AirbnbState() {
 			try{
 				database = AirbnbSetup.getDatabase();
@@ -139,23 +139,23 @@ public class AirbnbBenchmark {
 				throw new RuntimeException("cannot initialize benchmark state", e);
 			}
 		}
-		
+
 		public PatternInfo<String> getHostPatternInfo() {
 			return hostPatternInfo;
 		}
-		
+
 		public PatternInfo<String> getReviewerPatternInfo() {
 			return reviewerPatternInfo;
 		}
-		
+
 	}
-	
+
 	private static class PatternInfo<T> {
 		private final List<T> ids;
 		private final Function<T, GraphPattern> patternGenerator;
 		private final List<GraphPattern> patterns;
 		private int currentIndex = 0;
-		
+
 		public PatternInfo(List<T> ids, Function<T, GraphPattern> patternGenerator) {
 			this.ids = ids;
 			this.patternGenerator = patternGenerator;
@@ -165,27 +165,27 @@ public class AirbnbBenchmark {
 			}
 			this.patterns = List.copyOf(patterns);
 		}
-		
+
 		public GraphPattern nextLoadedPattern() {
 			return patterns.get(nextIndex());
 		}
-		
+
 		public GraphPattern computeNextPattern() {
 			return patternGenerator.apply(nextId());
 		}
-		
+
 		public T nextId() {
 			return ids.get(nextIndex());
 		}
-		
+
 		private int nextIndex() {
 			int index = currentIndex;
 			currentIndex = (currentIndex + 1) % ids.size();
 			return index;
 		}
 	}
-	
+
 	private record Scenario2Id(String subjectId, String neighborhoodId) {
-		
+
 	}
 }

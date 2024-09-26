@@ -27,7 +27,7 @@ java -cp target/classes:target/test-classes:target/all-dependencies/*:target/are
 
 In order to profile a specific benchmark using [`async-profiler`](https://github.com/async-profiler/async-profiler), first download and extract `async-profiler` and then use the following command (replace `/PATH/TO/async-profiler` with the path you extracted `async-profiler` to):
 ```java
-java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar io.github.danthe1st.arebac.neo4j.tests.airbnb.AirbnbBenchmark.scenario1GetReviewsFromHostGPEval -f 1 -jvmArgs '-agentpath:/PATH/TO/async-profiler/lib/libasyncProfiler.so=start,event=cpu,file=profile.html'
+java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar org.openjdk.jmh.Main AirbnbBenchmark.scenario1GetReviewsFromHostGPEvalWithoutWeaving -prof 'async:libPath=/PATH/TO/async-profiler/lib/libasyncProfiler.so;output=flamegraph;dir=profile' -f 2
 ```
 
-This configures JMH to only use a single fork and attaches async-profiler to create a CPU flamegraph in a `profile.html` file. The above example runs the benchmarks specified in the `SOBenchmark` class.
+This configures JMH to only use only two forks and attaches async-profiler to create a CPU flamegraph in a `profile.html` file. The above example runs the benchmarks specified in the `SOBenchmark` class.
