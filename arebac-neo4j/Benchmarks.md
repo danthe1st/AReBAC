@@ -17,6 +17,12 @@ java -cp target/classes:target/test-classes:target/all-dependencies/*:target/are
 
 It is also possible to run all benchmarks in a specific class or package.
 
+The following command can be used for checking whether all benchmarks run successfully. This command does not yield relevant performance information.
+```bash
+# WARNING: THIS DOES NOT RUN BENCHMARKS IN A USEFUL WAY - ONLY FOR TESTING
+java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar org.openjdk.jmh.Main -f 1 -i 1 -wi 0 -r 100ms -foe true
+```
+
 ## profiling
 
 In order to profile a specific benchmark using [`async-profiler`](https://github.com/async-profiler/async-profiler), first download and extract `async-profiler` and then use the following command (replace `/PATH/TO/async-profiler` with the path you extracted `async-profiler` to):
