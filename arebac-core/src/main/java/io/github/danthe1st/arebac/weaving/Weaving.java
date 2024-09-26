@@ -20,6 +20,10 @@ import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusion
 public final class Weaving {
     private final List<GraphPattern> inputPatterns;
     private final Map<String, GPNode> actorsToCombinedNodes = new HashMap<>();
+	/**
+	 * @see Weaving#findEquivalences()
+	 * @see Weaving#convertNode(int, GPNode)
+	 */
     private final Map<VertexInGraphPattern, GPNode> vertexToNodes = new HashMap<>();
 
 	public static GraphPattern combinePatterns(List<GraphPattern> inputPatterns) {
@@ -34,7 +38,7 @@ public final class Weaving {
 	private GraphPattern run() {
         findEquivalences();
 		LinkedHashMap<EdgeInGraphPattern, GPEdge> edgeMapping = createEdges();
-		GPGraph graph = new GPGraph(new ArrayList<>(new HashSet<>(vertexToNodes.values())), new ArrayList<>(edgeMapping.values()));
+		GPGraph graph = new GPGraph(new ArrayList<>(new HashSet<>(vertexToNodes.values())), new ArrayList<>(new HashSet<>(edgeMapping.values())));
 		List<MutualExclusionConstraint> mutualExclusionConstraints = createMutualExclusionConstraints();
 		Map<GPNode, List<AttributeRequirement>> nodeRequirements = createNodeRequirements();
 		Map<GPEdge, List<AttributeRequirement>> edgeRequirements = createEdgeRequirements(edgeMapping);
@@ -42,6 +46,11 @@ public final class Weaving {
 		return new GraphPattern(graph, mutualExclusionConstraints, nodeRequirements, edgeRequirements, returnedNodes, actorsToCombinedNodes);
     }
 
+	/**
+	 * Populates {@link Weaving#vertexToNodes} such that each vertex in each of the input graph patterns are associated with a {@link GPNode}.
+	 * If vertices of different graph patterns are associated with the same actor, these point to the same {@link GPNode}.
+	 * This requires both vertices having the same label.
+	 */
 	private void findEquivalences() {
 		for(int patternIndex = 0; patternIndex < inputPatterns.size(); patternIndex++){
 			GraphPattern graphPattern = inputPatterns.get(patternIndex);
@@ -72,7 +81,13 @@ public final class Weaving {
 			}
 		}
 	}
-	
+
+	/**
+	 * Creates a mapping from edges in the old graph pattern to edges in the new graph pattern.
+	 * If an edge is present in the old graph pattern, it must also be present in the new graph pattern.
+	 * The vertices of the new edges are found in {@link Weaving#vertexToNodes} i.e. edges use the vertices in the resulting graph pattern
+	 * @return A mapping from edges in the old graph pattern to edges in the new graph pattern
+	 */
 	private LinkedHashMap<EdgeInGraphPattern, GPEdge> createEdges() {
 		LinkedHashMap<EdgeInGraphPattern, GPEdge> oldToNewEdges = new LinkedHashMap<>();
 		for(int patternId = 0; patternId < inputPatterns.size(); patternId++){
@@ -87,7 +102,12 @@ public final class Weaving {
 		}
 		return oldToNewEdges;
 	}
-	
+
+	/**
+	 * Creates all vertex attribute requirements in the new graph pattern.
+	 * Each vertex attribute requirement in an input pattern corresponds to a vertex attribute requirement in the resulting pattern but using the vertices of the new pattern in {@link Weaving#vertexToNodes}.
+	 * @return The node attribute requirements of the new pattern
+	 */
 	private Map<GPNode, List<AttributeRequirement>> createNodeRequirements() {
 		Map<GPNode, List<AttributeRequirement>> nodeRequirements = new HashMap<>();
 		for(int patternId = 0; patternId < inputPatterns.size(); patternId++){
@@ -107,6 +127,12 @@ public final class Weaving {
 		return nodeRequirements;
 	}
 
+	/**
+	 * Creates all edge attribute requirements in the new graph pattern.
+	 * Each edge attribute requirement in an input pattern corresponds to an edge attribute requirement in the resulting pattern but vertices in the resulting pattern are looked up from {@link Weaving#vertexToNodes}.
+	 * @param edgeMapping The mapping from edges in all input graph patterns to edges in the resulting graph pattern
+	 * @return All edge attribute requirements of the new graph pattern
+	 */
 	private Map<GPEdge, List<AttributeRequirement>> createEdgeRequirements(LinkedHashMap<EdgeInGraphPattern, GPEdge> edgeMapping) {
 		Map<GPEdge, List<AttributeRequirement>> edgeRequirements = new HashMap<>();
 		for(int patternId = 0; patternId < inputPatterns.size(); patternId++){
@@ -121,6 +147,11 @@ public final class Weaving {
 		return edgeRequirements;
 	}
 
+	/**
+	 * Creates all mutual exclusion constraints in the new graph pattern.
+	 * All mutual exclusion constraints in any of the input patterns must be present in the resulting pattern but vertices are transformed/looked up using {@link Weaving#vertexToNodes}.
+	 * @return A {@link List} with all mutual exclusion constraints of the new graph pattern
+	 */
 	private List<MutualExclusionConstraint> createMutualExclusionConstraints() {
 		List<MutualExclusionConstraint> mutualExclusionConstraints = new ArrayList<>();
 		for(int patternId = 0; patternId < inputPatterns.size(); patternId++){
@@ -134,6 +165,11 @@ public final class Weaving {
 		return mutualExclusionConstraints;
 	}
 
+	/**
+	 * Computes the returned vertices of the resulting graph pattern.
+	 * This method transforms vertices in the input patterns using {@link Weaving#vertexToNodes}.
+	 * @return a {@link List} containing all returned vertices of the resulting graph pattern
+	 */
 	private List<GPNode> createReturnedNodes() {
 		List<GPNode> returnedNodes = new ArrayList<>();
 		for(int patternId = 0; patternId < inputPatterns.size(); patternId++){
@@ -144,13 +180,24 @@ public final class Weaving {
 		}
 		return returnedNodes;
 	}
-	
+
+	/**
+	 * converts an edge in an input pattern to an edge in the result pattern
+	 * @param edgeInPattern information about the edge in the input pattern
+	 * @return The new {@link GPEdge} in the resulting pattern
+	 */
 	private GPEdge convertEdge(EdgeInGraphPattern edgeInPattern) {
 		GPNode newSource = convertNode(edgeInPattern.patternId(), edgeInPattern.edge().source());
 		GPNode newTarget = convertNode(edgeInPattern.patternId(), edgeInPattern.edge().target());
 		return new GPEdge(newSource, newTarget, generateId(edgeInPattern.patternId(), edgeInPattern.edge().id()), edgeInPattern.edge().edgeType());
 	}
 
+	/**
+	 * Looks up a vertex in an input pattern using {@link Weaving#vertexToNodes} and returns the corresponding edge in the resulting pattern.
+	 * @param patternId The index of the input pattern
+	 * @param requiredNode the {@link GPNode vertex} in the input pattern
+	 * @return The {@link GPNode vertex} in the resulting pattern
+	 */
 	private GPNode convertNode(int patternId, GPNode requiredNode) {
 		VertexInGraphPattern nodeInPattern = new VertexInGraphPattern(patternId, requiredNode);
 		return Objects.requireNonNull(vertexToNodes.get(nodeInPattern));
