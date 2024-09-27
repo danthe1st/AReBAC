@@ -10,6 +10,7 @@ import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.ResourceIterable;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.schema.ConstraintDefinition;
@@ -28,18 +29,18 @@ public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 	}
 	
 	@Override
-	public Collection<Neo4jEdge> findOutgoingEdges(Neo4jNode node) {
-		return findEdges(node, Direction.OUTGOING);
+	public Collection<Neo4jEdge> findOutgoingEdges(Neo4jNode node, String edgeType) {
+		return findEdges(node, edgeType, Direction.OUTGOING);
 	}
 
 	@Override
-	public Collection<Neo4jEdge> findIncomingEdges(Neo4jNode node) {
-		return findEdges(node, Direction.INCOMING);
+	public Collection<Neo4jEdge> findIncomingEdges(Neo4jNode node, String edgeType) {
+		return findEdges(node, edgeType, Direction.INCOMING);
 	}
 	
-	private Collection<Neo4jEdge> findEdges(Neo4jNode node, Direction direction) {
+	private Collection<Neo4jEdge> findEdges(Neo4jNode node, String edgeType, Direction direction) {
 		List<Neo4jEdge> edges = new ArrayList<>();
-		try(ResourceIterable<Relationship> relationships = node.getDBNode().getRelationships(direction)){
+		try(ResourceIterable<Relationship> relationships = node.getDBNode().getRelationships(direction, RelationshipType.withName(edgeType))){
 			for(Relationship relationship : relationships){
 				edges.add(new Neo4jEdge(relationship));
 			}

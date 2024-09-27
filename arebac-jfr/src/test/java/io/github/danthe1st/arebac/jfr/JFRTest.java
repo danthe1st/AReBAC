@@ -20,8 +20,8 @@ public class JFRTest {
 		JFRRecordedGraphWrapper<InMemoryGraphNode, InMemoryGraphEdge> jfrGraph = new JFRRecordedGraphWrapper<>(internalGraph);
 		JFRRecordedGraphNode<InMemoryGraphNode> foundNode = jfrGraph.findNodeById("someId");
 		System.out.println(foundNode);
-		System.out.println(jfrGraph.findIncomingEdges(foundNode));
-		Collection<JFRRecordedGraphEdge<InMemoryGraphNode, InMemoryGraphEdge>> outgoingEdges = jfrGraph.findOutgoingEdges(foundNode);
+		System.out.println(jfrGraph.findIncomingEdges(foundNode, "eType"));
+		Collection<JFRRecordedGraphEdge<InMemoryGraphNode, InMemoryGraphEdge>> outgoingEdges = jfrGraph.findOutgoingEdges(foundNode, "eType");
 		System.out.println(outgoingEdges);
 		for(JFRRecordedGraphEdge<InMemoryGraphNode, InMemoryGraphEdge> jfrRecordedGraphEdge : outgoingEdges){
 			System.err.println(jfrRecordedGraphEdge.getAttribute("attr"));

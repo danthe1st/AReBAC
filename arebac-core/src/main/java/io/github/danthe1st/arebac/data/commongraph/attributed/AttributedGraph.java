@@ -11,10 +11,10 @@ import java.util.Collection;
  */
 public interface AttributedGraph<N extends AttributedNode, E extends AttributedGraphEdge<N>> {
 	N findNodeById(String id);
-	
-	Collection<E> findOutgoingEdges(N node);
-	Collection<E> findIncomingEdges(N node);
 
+	Collection<E> findOutgoingEdges(N node, String edgeType);
+	Collection<E> findIncomingEdges(N node, String edgeType);
+	
 	/**
 	 * Checks whether an attribute is unique for a specified node type.
 	 *

@@ -410,10 +410,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		Function<E, N> neighborFinder;
 		if(relevantEdge.isOutgoing()){
 			// TODO make this more efficient by finding the exact relevant edges
-			graphEdges = graph.findOutgoingEdges(currentNodeInDB);
+			graphEdges = graph.findOutgoingEdges(currentNodeInDB, relevantEdge.edgeType());
 			neighborFinder = AttributedGraphEdge::target;
 		}else{
-			graphEdges = graph.findIncomingEdges(currentNodeInDB);
+			graphEdges = graph.findIncomingEdges(currentNodeInDB, relevantEdge.edgeType());
 			neighborFinder = AttributedGraphEdge::source;
 		}
 		graphEdges = Objects.requireNonNullElse(graphEdges, List.of());
@@ -467,15 +467,15 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 
 		List<RelevantEdge> relevantEdges = new ArrayList<>();
 		for(GPEdge edge : incomingEdges){
-			relevantEdges.add(new RelevantEdge(edge, edge.source(), false));
+			relevantEdges.add(new RelevantEdge(edge, edge.source(), edge.edgeType(), false));
 		}
 		for(GPEdge edge : outgoingEdges){
-			relevantEdges.add(new RelevantEdge(edge, edge.target(), true));
+			relevantEdges.add(new RelevantEdge(edge, edge.target(), edge.edgeType(), true));
 		}
 		return relevantEdges;
 	}
 
-	private record RelevantEdge(GPEdge edge, GPNode otherNode, boolean isOutgoing) {
+	private record RelevantEdge(GPEdge edge, GPNode otherNode, String edgeType, boolean isOutgoing) {
 	}
 
 }

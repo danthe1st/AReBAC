@@ -29,20 +29,20 @@ public class JFRRecordedGraphWrapper<N extends AttributedNode, E extends Attribu
 	}
 	
 	@Override
-	public Collection<JFRRecordedGraphEdge<N, E>> findOutgoingEdges(JFRRecordedGraphNode<N> node) {
+	public Collection<JFRRecordedGraphEdge<N, E>> findOutgoingEdges(JFRRecordedGraphNode<N> node, String edgeType) {
 		FindEdgesEvent event = new FindEdgesEvent(node.id(), Direction.OUTGOING);
 		event.begin();
-		Collection<E> outgoingEdges = graph.findOutgoingEdges(node.getInternalNode());
+		Collection<E> outgoingEdges = graph.findOutgoingEdges(node.getInternalNode(), edgeType);
 		event.setFoundEdgesCount(outgoingEdges.size());
 		event.commit();
 		return outgoingEdges.stream().map(JFRRecordedGraphEdge::new).toList();
 	}
 	
 	@Override
-	public Collection<JFRRecordedGraphEdge<N, E>> findIncomingEdges(JFRRecordedGraphNode<N> node) {
+	public Collection<JFRRecordedGraphEdge<N, E>> findIncomingEdges(JFRRecordedGraphNode<N> node, String edgeType) {
 		FindEdgesEvent event = new FindEdgesEvent(node.id(), Direction.INCOMING);
 		event.begin();
-		Collection<E> incomingEdges = graph.findIncomingEdges(node.getInternalNode());
+		Collection<E> incomingEdges = graph.findIncomingEdges(node.getInternalNode(), edgeType);
 		event.setFoundEdgesCount(incomingEdges.size());
 		event.commit();
 		return incomingEdges.stream().map(JFRRecordedGraphEdge::new).toList();
