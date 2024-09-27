@@ -78,6 +78,15 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		this.mutualExclusionConstraints = Map.copyOf(exclusionConstraints);
 	}
 
+	/**
+	 * Constructor used for recursive calls with different data
+	 * @param graph the attributed graph to match against, shared between recursive calls
+	 * @param pattern the graph pattern to match, shared between recursive calls
+	 * @param mutualExclusionConstraints the mutual exclusion constraints, shared between recursive calls
+	 * @param candidates candidate nodes in the attributed graph for each vertex in the pattern where candidates have been discovered, copied in recursive calls
+	 * @param assignments vertices assigned so far, copied in recursive calls
+	 * @param results a {@link Set} storing the results of each pattern, shared between recursive calls
+	 */
 	private GPEval(AttributedGraph<N, E> graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, List<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results) {
 		this.graph = graph;
 		this.pattern = pattern;
@@ -99,6 +108,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		checkRequirementsForFixedVertices();
 	}
 
+	/**
+	 * Finds vertices that are known to only have one possible assignment and stores these in {@link GPEval#candidates}
+	 * @throws NoResultException if the vertex attribute requirements fail on these vertices indicating there can be no results
+	 */
 	private void setupFixedVertices() throws NoResultException {
 		for(Map.Entry<GPNode, List<AttributeRequirement>> attributeRequirementEntry : pattern.nodeRequirements().entrySet()){
 			GPNode patternNode = attributeRequirementEntry.getKey();
@@ -126,6 +139,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		}
 	}
 
+	/**
+	 * Checks vertex attribute requirements on fixed vertices - this assumes that all entries in {@link GPEval#candidates} only have one corresponding node in the attributed graph
+	 * @throws NoResultException if any vertex attribute requirement cannot be satisfied for a fixed vertex
+	 */
 	private void checkRequirementsForFixedVertices() throws NoResultException {
 		for(Map.Entry<GPNode, List<N>> assignedNodeEntry : candidates.entrySet()){
 			GPNode patternNode = assignedNodeEntry.getKey();
@@ -142,6 +159,12 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		}
 	}
 
+	/**
+	 * Checks vertex attribute requirements for a specified vertex
+	 * @param patternNode The vertex in the graph pattern
+	 * @param graphNode The node in the attributed graph the vertex may correspond to
+	 * @return {@code true} if the attribute requirements match, else {@code false}
+	 */
 	private boolean checkRequirementsForNode(GPNode patternNode, N graphNode) {
 		for(AttributeRequirement requirement : pattern.nodeRequirements().get(patternNode)){
 			if(!requirement.evaluate(graphNode)){
@@ -151,6 +174,11 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return true;
 	}
 
+	/**
+	 * Runs the recursive phase of the GP-Eval algorithm
+	 * @param incomingConflicts a mapping storing information on which vertex could result in conflicts with which other nodes
+	 * @return a {@link Set} of vertices when backjumping should stop
+	 */
 	private Set<GPNode> run(Map<GPNode, List<GPNode>> incomingConflicts) {// returns nodes for backjumping
 		if(assignments.size() == pattern.graph().nodes().size()){
 
@@ -160,10 +188,14 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			}
 
 			results.add(List.copyOf(result));
+			// backjump until any of the returned nodes are reassigned
+			// there is no point in looking at assignments leading to the same returned nodes
 			return Set.copyOf(pattern.returnedNodes());
 		}
 
 		boolean deadEnd = true;
+		// all vertices where conflicts happened, used for backjumping
+		// if a conflict happened on a vertex and that vertex is reassigned, backjumping should stop/the search should continue
 		Set<GPNode> conflicts = new HashSet<>();
 		Set<GPNode> outgoingConflicts = new HashSet<>();
 
@@ -182,7 +214,9 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			boolean valid = child.forwardChecking(currentNode, newIncomingConflicts, outgoingConflicts);
 			if(valid){
 				deadEnd = false;
-				Set<GPNode> jump = child.run(newIncomingConflicts);// the paper uses incomingConflicts (confIn) here but I think that's just a missing single quote
+				Set<GPNode> jump = child.run(newIncomingConflicts);// the paper uses incomingConflicts (confIn) here but that's just a missing single quote
+				// backjumping:
+				// if the currently assigned node is within the returned vertices, continue checking
 				if(!jump.isEmpty() && !jump.contains(currentNode)){
 					return jump;
 				}
@@ -190,6 +224,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			}
 		}
 
+		// in case of a dead end (no candidate resulted in forward checking to succeed)
+		// perform backjumping with incoming conflicts related to current vertex and all incoming conflicts related to nodes listed in outgoingConflicts
 		if(deadEnd){
 			addAllIncomingConflictsForNode(incomingConflicts, conflicts, currentNode);
 			for(GPNode node : outgoingConflicts){
@@ -197,6 +233,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			}
 			return conflicts;
 		}
+		// forward checking successful / no dead end
 		conflicts.addAll(pattern.returnedNodes());
 		for(GPNode node : pattern.returnedNodes()){
 			addAllIncomingConflictsForNode(incomingConflicts, conflicts, node);
@@ -210,6 +247,14 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return conflicts;
 	}
 
+	/**
+	 * create a deep copy of a {@code Map<K, List<V>>} but don't include the specified key in the copy
+	 * @param <K> the key type
+	 * @param <V> the value element type
+	 * @param multimap the {@link Map} to copy
+	 * @param keyToSkip the key to not copy
+	 * @return the copy of the map, not including the entry identified by {@code keyToSkip}
+	 */
 	private <K, V> Map<K, List<V>> deepCopyExceptKey(Map<K, List<V>> multimap, K keyToSkip) {
 		Map<K, List<V>> result = HashMap.newHashMap(multimap.size());
 		for(Entry<K, List<V>> entry : multimap.entrySet()){
@@ -220,6 +265,13 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return result;
 	}
 
+	/**
+	 * create a deep copy of a {@code Map<K, List<V>>}
+	 * @param <K> the key type
+	 * @param <V> the value element type
+	 * @param multimap the {@link Map} to copy
+	 * @return the copy of the map
+	 */
 	private <K, V> Map<K, List<V>> deepCopy(Map<K, List<V>> multimap) {
 		Map<K, List<V>> result = HashMap.newHashMap(multimap.size());
 		for(Entry<K, List<V>> entry : multimap.entrySet()){
@@ -228,6 +280,12 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return result;
 	}
 
+	/**
+	 * Add all incoming conflicts associated with a specified node to the {@link Set} of conflicts
+	 * @param incomingConflicts all incoming conflicts for any node
+	 * @param conflicts the {@link Set} of conflicts to modify
+	 * @param currentNode the node relevant for incoming conflicts
+	 */
 	private void addAllIncomingConflictsForNode(Map<GPNode, List<GPNode>> incomingConflicts, Set<GPNode> conflicts, GPNode currentNode) {
 		List<GPNode> nodeIncomingConflicts = incomingConflicts.get(currentNode);
 		if(nodeIncomingConflicts != null){
@@ -235,6 +293,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		}
 	}
 
+	/**
+	 * Pick the next node to assign
+	 * @return a {@link GPNode} to assign
+	 */
 	private GPNode pickNextNode() {
 		GPNode candidate = null;
 		int numberOfPossibilities = Integer.MAX_VALUE;
@@ -253,6 +315,12 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return candidate;
 	}
 
+	/**
+	 * Removes candidates violating a mutual exclusion constraint with already assigned nodes
+	 * @param candidatesForNode The candidates to filter
+	 * @param exclusionConstraints all vertices that must have different assignments than the candidates
+	 * @param incomingConflicts vertices violating mutual exclusion constraints are added to this collection
+	 */
 	private void filterMutualExclusionConstraints(List<N> candidatesForNode, Set<GPNode> exclusionConstraints, List<GPNode> incomingConflicts) {
 		FilterMutualExclusionConstraintsEvent event = new FilterMutualExclusionConstraintsEvent();
 		event.begin();
@@ -262,6 +330,12 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		event.commit();
 	}
 
+	/**
+	 * Removes a specific candidate
+	 * @param exclusionConstraints the mutual exclusion constraints applying to the candidate
+	 * @param incomingConflicts if the vertex violates a mutual exclusion constraint, the other vertex is added as an incoming conflict
+	 * @param it used for obtaining the node and removing it if it matches a mutual exclusion constraint
+	 */
 	private void filterMutualExclusionConstraintWithSpecificCandidate(Set<GPNode> exclusionConstraints, List<GPNode> incomingConflicts, Iterator<N> it) {
 		N graphCandidate = it.next();
 		for(GPNode exclusionConstraint : exclusionConstraints){
@@ -273,6 +347,19 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		}
 	}
 
+	/**
+	 * Runs the forward checking part of GP-Eval
+	 * This checks all expected incoming and outgoing edges of a specified vertex as follows:
+	 * <ul>
+	 *   <li>If the other node is not assigned yet, ignore it</li>
+	 *   <li>Else, check whether specified in the graph pattern should be satisfied with the specified neighbor</li>
+	 *   <li>This also discovers further neighbors and adds them.</li>
+	 * </ul>
+	 * @param currentNode The node to check
+	 * @param incomingConflicts potential conflicts discovered in forward checking are added as incoming conflicts
+	 * @param outgoingConflicts if a vertex cannot be assigned (no candidates found), that is added to outgoing conflicts
+	 * @return {@code true} if forward checking succeeds, else {@code false}
+	 */
 	private boolean forwardChecking(GPNode currentNode, Map<GPNode, List<GPNode>> incomingConflicts, Set<GPNode> outgoingConflicts) {
 		ForwardCheckingEvent forwardCheckingEvent = new ForwardCheckingEvent();
 		forwardCheckingEvent.begin();
@@ -286,7 +373,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 				Collection<N> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge, forwardCheckingEvent);
 				forwardCheckingEvent.addNeighborsProcessed(neighbors.size());
 				List<N> otherNodeCandidates = candidates.get(otherNode);
-				assert otherNodeCandidates == null || !otherNodeCandidates.isEmpty();// I think this shouldn't happen, null is written as empty in the paper
+				assert otherNodeCandidates == null || !otherNodeCandidates.isEmpty();// this should normally not happen, null is written as empty in the paper
 				List<GPNode> otherNodeIncomingConflicts = incomingConflicts.computeIfAbsent(otherNode, n -> new ArrayList<>());
 				List<GPNode> currentNodeIncomingConflicts = incomingConflicts.computeIfAbsent(currentNode, n -> new ArrayList<>());
 				if(otherNodeCandidates == null || !neighbors.containsAll(Objects.requireNonNullElse(otherNodeCandidates, List.of()))){
@@ -310,11 +397,19 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return true;
 	}
 
+	/**
+	 * Gets all neighbors of a specific node along a specific edge
+	 * @param currentNode the current node
+	 * @param relevantEdge the edge of the current node to the other node
+	 * @param forwardCheckingEvent used for diagnosis, not necessary for GP-Eval
+	 * @return the neighbors satisfying the requirements
+	 */
 	private Collection<N> getNeighborsSatisfyingEdgeAndAttributeRequirements(GPNode currentNode, RelevantEdge relevantEdge, ForwardCheckingEvent forwardCheckingEvent) {
 		N currentNodeInDB = assignments.get(currentNode);
 		Collection<E> graphEdges;
 		Function<E, N> neighborFinder;
 		if(relevantEdge.isOutgoing()){
+			// TODO make this more efficient by finding the exact relevant edges
 			graphEdges = graph.findOutgoingEdges(currentNodeInDB);
 			neighborFinder = AttributedGraphEdge::target;
 		}else{
@@ -335,6 +430,13 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return neighborsSatisfyingRequirements;
 	}
 
+	/**
+	 * Checks whether an edge with a specific neighbor satisfies the specified labels/requirements
+	 * @param currentEdge The graph pattern edge to check
+	 * @param graphEdge The edge in the attributed graph to check against
+	 * @param neighbor The other graph node in the edge
+	 * @return {@code true} if the requirements are met, else {@code false}
+	 */
 	private boolean satisfiesRequirements(RelevantEdge currentEdge, E graphEdge, N neighbor) {
 		return graphEdge.hasEdgeType(currentEdge.edge.edgeType()) &&
 				neighbor.hasNodeType(currentEdge.otherNode.nodeType()) &&
@@ -354,6 +456,11 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return true;
 	}
 
+	/**
+	 * Gets all edges of a specified node in the graph pattern
+	 * @param currentNode the node
+	 * @return all edges related to the given node
+	 */
 	private List<RelevantEdge> getRelevantEdges(GPNode currentNode) {
 		Collection<GPEdge> outgoingEdges = Objects.requireNonNullElse(pattern.graph().outgoingEdges().get(currentNode), Set.of());
 		Collection<GPEdge> incomingEdges = Objects.requireNonNullElse(pattern.graph().incomingEdges().get(currentNode), Set.of());
