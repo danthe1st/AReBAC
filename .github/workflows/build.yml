@@ -52,4 +52,4 @@ jobs:
       run: mvn -B install -Pbenchmarks -DskipTests
     - name: Run benchmarks
       working-directory: ./arebac-neo4j
-      run: java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar org.openjdk.jmh.Main
+      run: java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar:../arebac-core/target/classes/ org.openjdk.jmh.Main
