@@ -60,6 +60,7 @@ This module provides the following JFR events:
 Aside from that, the GP-Eval implementation (in the `arebac-core` module) provides these JFR events:
 - `io.github.danthe1st.arebac.gpeval.events.FilterMutualExclusionConstraintEvent`: This event is fired during the "filter mutual exclusion constraints" step of GP-Eval.
 - `io.github.danthe1st.arebac.gpeval.events.ForwardCheckingEvent`: This event is fired during the forward-checking step of GP-Eval.
+- `io.github.danthe1st.arebac.gpeval.events.IntersectionEvent`: This event is fired during the intersection computation as part of the forward-checking step of GP-Eval
 
 ## License
 

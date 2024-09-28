@@ -26,6 +26,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequir
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusionConstraint;
 import io.github.danthe1st.arebac.gpeval.events.FilterMutualExclusionConstraintsEvent;
 import io.github.danthe1st.arebac.gpeval.events.ForwardCheckingEvent;
+import io.github.danthe1st.arebac.gpeval.events.IntersectionEvent;
 
 /**
  * Implementation of the GP-eval algorithm.
@@ -370,7 +371,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			GPNode otherNode = relevantEdge.otherNode();
 			if(!assignments.containsKey(otherNode)){
 				forwardCheckingEvent.addUnknownEdge();
-				Collection<N> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge, forwardCheckingEvent);
+				List<N> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge, forwardCheckingEvent);
 				forwardCheckingEvent.addNeighborsProcessed(neighbors.size());
 				List<N> otherNodeCandidates = candidates.get(otherNode);
 				assert otherNodeCandidates == null || !otherNodeCandidates.isEmpty();// this should normally not happen, null is written as empty in the paper
@@ -384,7 +385,18 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 					otherNodeCandidates = new ArrayList<>(neighbors);
 					candidates.put(otherNode, otherNodeCandidates);
 				}else{
-					otherNodeCandidates.retainAll(neighbors);
+					// intersect otherNodeCandidates with neighbors
+					IntersectionEvent event = new IntersectionEvent();
+					event.setNeighborsCount(neighbors.size());
+					event.setCandidatesCountBefore(otherNodeCandidates.size());
+					event.begin();
+					
+					neighbors.retainAll(otherNodeCandidates);
+					otherNodeCandidates = neighbors;
+					candidates.put(otherNode, otherNodeCandidates);
+					
+					event.setCandidateCountAfter(otherNodeCandidates.size());
+					event.commit();
 				}
 				if(otherNodeCandidates.isEmpty()){
 					outgoingConflicts.add(otherNode);
@@ -404,7 +416,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 	 * @param forwardCheckingEvent used for diagnosis, not necessary for GP-Eval
 	 * @return the neighbors satisfying the requirements
 	 */
-	private Collection<N> getNeighborsSatisfyingEdgeAndAttributeRequirements(GPNode currentNode, RelevantEdge relevantEdge, ForwardCheckingEvent forwardCheckingEvent) {
+	private List<N> getNeighborsSatisfyingEdgeAndAttributeRequirements(GPNode currentNode, RelevantEdge relevantEdge, ForwardCheckingEvent forwardCheckingEvent) {
 		N currentNodeInDB = assignments.get(currentNode);
 		Collection<E> graphEdges;
 		Function<E, N> neighborFinder;
@@ -417,7 +429,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 			neighborFinder = AttributedGraphEdge::source;
 		}
 		graphEdges = Objects.requireNonNullElse(graphEdges, List.of());
-		Collection<N> neighborsSatisfyingRequirements = new HashSet<>();
+		List<N> neighborsSatisfyingRequirements = new ArrayList<>();
 		for(E graphEdge : graphEdges){
 			N neighbor = neighborFinder.apply(graphEdge);
 			if(satisfiesRequirements(relevantEdge, graphEdge, neighbor)){

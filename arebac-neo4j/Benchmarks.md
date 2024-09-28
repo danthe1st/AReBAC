@@ -7,12 +7,12 @@ mvn clean package -DskipTests -Pbenchmarks
 
 After that, all benchmarks can be run using
 ```bash
-java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar org.openjdk.jmh.Main
+java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar:../arebac-core/target/classes/ org.openjdk.jmh.Main
 ```
 
 In order to run a single benchmark, the name of the benchmark needs to be added as an additional argument:
 ```bash
-java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar org.openjdk.jmh.Main io.github.danthe1st.arebac.neo4j.tests.stackoverflow.SOBenchmark.gpEval
+java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar:../arebac-core/target/classes/ org.openjdk.jmh.Main io.github.danthe1st.arebac.neo4j.tests.stackoverflow.SOBenchmark.gpEval
 ```
 
 It is also possible to run all benchmarks in a specific class or package.
@@ -20,7 +20,7 @@ It is also possible to run all benchmarks in a specific class or package.
 The following command can be used for checking whether all benchmarks run successfully. This command does not yield relevant performance information.
 ```bash
 # WARNING: THIS DOES NOT RUN BENCHMARKS IN A USEFUL WAY - ONLY FOR TESTING
-java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar org.openjdk.jmh.Main -f 1 -i 1 -wi 0 -r 100ms -foe true
+java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar:../arebac-core/target/classes/ org.openjdk.jmh.Main -f 1 -i 1 -wi 0 -r 100ms -foe true
 ```
 
 ## profiling
