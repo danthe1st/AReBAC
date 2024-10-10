@@ -28,7 +28,7 @@ import org.openjdk.jmh.infra.Blackhole;
 public class SOBenchmark {
 	
 	@Benchmark
-	public void gpEval(SOBenchmarkState state, Blackhole bh) {
+	public void usersCommentingTogetherGPEval(SOBenchmarkState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
 			Neo4jDB db = new Neo4jDB(tx);
 			Set<List<Neo4jNode>> result = GPEval.evaluate(db, SOTest.createCommentsToSameQuestionInTagPattern("name", state.nextTagName()));
@@ -37,7 +37,7 @@ public class SOBenchmark {
 	}
 	
 	@Benchmark
-	public void neo4j(SOBenchmarkState state, Blackhole bh) {
+	public void usersCommentingTogetherNeo4j(SOBenchmarkState state, Blackhole bh) {
 		try(Transaction tx = state.database.beginTx()){
 			try(Result result = tx.execute(
 					"""
@@ -49,6 +49,56 @@ public class SOBenchmark {
 							RETURN u1c1, u2c1, u1c2, u2c2
 							""",
 					Map.of("tagName", state.nextTagName())
+			)){
+				result.forEachRemaining(bh::consume);
+			}
+		}
+	}
+	
+	@Benchmark
+	public void selfAnswersInTagGPEval(SOBenchmarkState state, Blackhole bh) {
+		try(Transaction tx = state.database.beginTx()){
+			Neo4jDB db = new Neo4jDB(tx);
+			Set<List<Neo4jNode>> result = GPEval.evaluate(db, SOTest.createSelfAnswerPatternWithTagName(state.nextTagName()));
+			result.forEach(bh::consume);
+		}
+	}
+	
+	@Benchmark
+	public void selfAnswersInTagNeo4j(SOBenchmarkState state, Blackhole bh) {
+		try(Transaction tx = state.database.beginTx()){
+			try(Result result = tx.execute(
+					"""
+							MATCH (t:Tag{name:$tagName})<-[:TAGGED]-(q:Question)
+							MATCH (u:User)-[:ASKED]->(q:Question)<-[:ANSWERED]-(a:Answer)<-[:PROVIDED]-(u:User)
+							RETURN a
+							""",
+					Map.of("tagName", state.nextTagName())
+			)){
+				result.forEachRemaining(bh::consume);
+			}
+		}
+	}
+	
+	@Benchmark
+	public void selfAnswersByUserGPEval(SOBenchmarkUUIDState state, Blackhole bh) {
+		try(Transaction tx = state.database.beginTx()){
+			Neo4jDB db = new Neo4jDB(tx);
+			Set<List<Neo4jNode>> result = GPEval.evaluate(db, SOTest.createSelfAnswerPatternWithUUID(state.nextUUID()));
+			result.forEach(bh::consume);
+		}
+	}
+	
+	@Benchmark
+	public void selfAnswersByUserNeo4j(SOBenchmarkUUIDState state, Blackhole bh) {
+		try(Transaction tx = state.database.beginTx()){
+			try(Result result = tx.execute(
+					"""
+							MATCH (u:User)-[:ASKED]->(q:Question)<-[:ANSWERED]-(a:Answer)<-[:PROVIDED]-(u:User)
+							WHERE u.uuid=$uuid
+							RETURN a
+							""",
+					Map.of("uuid", state.nextUUID())
 			)){
 				result.forEachRemaining(bh::consume);
 			}
@@ -73,6 +123,27 @@ public class SOBenchmark {
 			int index = currentTagIndex;
 			currentTagIndex = (currentTagIndex + 1) % tagNames.size();
 			return tagNames.get(index);
+		}
+	}
+	
+	@State(Scope.Thread)
+	public static class SOBenchmarkUUIDState {
+		private final List<Integer> uuids = List.of(6554121, 12334270, 394071, 15127452);
+		private int currentTagIndex = 0;
+		private final GraphDatabaseService database;
+		
+		public SOBenchmarkUUIDState() {
+			try{
+				database = SOSetup.getDatabase();
+			}catch(IOException | IncorrectFormat | InterruptedException | URISyntaxException e){
+				throw new RuntimeException(e);
+			}
+		}
+		
+		private int nextUUID() {
+			int index = currentTagIndex;
+			currentTagIndex = (currentTagIndex + 1) % uuids.size();
+			return uuids.get(index);
 		}
 	}
 }

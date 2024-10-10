@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
@@ -255,8 +256,9 @@ class SOTest {
 		);
 	}
 
-	@Test
-	void testSelfAnswers() {
+	@ParameterizedTest
+	@ValueSource(strings = { "cypher", "neo4j", "java", "kotlin" })
+	void testSelfAnswersByTag(String tagName) {
 		try(Transaction tx = database.beginTx()){
 			Set<List<Neo4jNode>> expectedResult;
 			try(Result testResult = tx.execute(
@@ -265,7 +267,7 @@ class SOTest {
 							MATCH (u:User)-[:ASKED]->(q:Question)<-[:ANSWERED]-(a:Answer)<-[:PROVIDED]-(u:User)
 							RETURN a
 							""",
-					Map.of("tagName", "neo4j")
+					Map.of("tagName", tagName)
 			)){
 				expectedResult = testResult
 					.stream()
@@ -274,14 +276,49 @@ class SOTest {
 					.map(List::of)
 					.collect(Collectors.toSet());
 			}
-			GraphPattern pattern = assertTimeout(Duration.ofSeconds(1), () -> createSelfAnswerPattern("neo4j"));
+			GraphPattern pattern = assertTimeout(Duration.ofSeconds(1), () -> createSelfAnswerPatternWithTagName(tagName));
 			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
 			assertNotEquals(0, result.size());
 			assertEquals(expectedResult, result);
 		}
 	}
 
-	private GraphPattern createSelfAnswerPattern(String tagName) {
+	@ParameterizedTest
+	@ValueSource(ints = { 6554121, 12334270, 394071, 15127452 })
+	void testGetSelfAnswersByUser(int uuid) {
+		try(Transaction tx = database.beginTx()){
+			Set<List<Neo4jNode>> expectedResult;
+			try(Result testResult = tx.execute(
+					"""
+							MATCH (u:User)-[:ASKED]->(q:Question)<-[:ANSWERED]-(a:Answer)<-[:PROVIDED]-(u:User)
+							WHERE u.uuid=$uuid
+							RETURN a
+							""",
+					Map.of("uuid", uuid)
+			)){
+				expectedResult = testResult
+					.stream()
+					.map(res -> (Node) res.get("a"))
+					.map(Neo4jNode::new)
+					.map(List::of)
+					.collect(Collectors.toSet());
+			}
+			GraphPattern pattern = assertTimeout(Duration.ofSeconds(1), () -> createSelfAnswerPatternWithUUID(uuid));
+			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
+			assertNotEquals(0, result.size());
+			assertEquals(expectedResult, result);
+		}
+	}
+	
+	static GraphPattern createSelfAnswerPatternWithTagName(String tagName) {
+		return createSelfAnswerPattern("tag", "name", attribute(tagName));
+	}
+	
+	static GraphPattern createSelfAnswerPatternWithUUID(int uuid) {
+		return createSelfAnswerPattern("user", "uuid", attribute(uuid));
+	}
+	
+	private static GraphPattern createSelfAnswerPattern(String nodeName, String attributeName, AttributeValue<?> attributeValue) {
 		GPNode tagNode = new GPNode("tag", TAG.name());
 		GPNode userNode = new GPNode("user", USER.name());
 		GPNode questionNode = new GPNode("question", QUESTION.name());
@@ -299,7 +336,7 @@ class SOTest {
 		return new GraphPattern(
 				graph,
 				List.of(),
-				Map.of(tagNode, List.of(new AttributeRequirement("name", EQUAL, attribute(tagName)))),
+				Map.of(graph.nodes().get(nodeName), List.of(new AttributeRequirement(attributeName, EQUAL, attributeValue))),
 				Map.of(),
 				List.of(answerNode), Map.of()
 		);

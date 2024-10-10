@@ -390,11 +390,11 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 					event.setNeighborsCount(neighbors.size());
 					event.setCandidatesCountBefore(otherNodeCandidates.size());
 					event.begin();
-					
+
 					neighbors.retainAll(otherNodeCandidates);
 					otherNodeCandidates = neighbors;
 					candidates.put(otherNode, otherNodeCandidates);
-					
+
 					event.setCandidateCountAfter(otherNodeCandidates.size());
 					event.commit();
 				}
