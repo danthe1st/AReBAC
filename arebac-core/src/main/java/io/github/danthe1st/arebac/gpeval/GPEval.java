@@ -172,7 +172,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 				return false;
 			}
 		}
-		return true;
+		return checkSelfConnectionRequirements(patternNode, graphNode);
 	}
 
 	/**
@@ -453,7 +453,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return graphEdge.hasEdgeType(currentEdge.edge.edgeType()) &&
 				neighbor.hasNodeType(currentEdge.otherNode.nodeType()) &&
 				checkAttributeRequirements(pattern.edgeRequirements().get(currentEdge.edge), graphEdge) &&
-				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor);
+				checkAttributeRequirements(pattern.nodeRequirements().get(currentEdge.otherNode), neighbor) &&
+				checkSelfConnectionRequirements(currentEdge.otherNode(), neighbor);
 	}
 
 	private boolean checkAttributeRequirements(List<AttributeRequirement> requirements, AttributeAware graphElement) {
@@ -468,6 +469,34 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		return true;
 	}
 
+	/**
+	 * Checks whether all edges of a node in the graph pattern to itself are satisfied
+	 * These edges are not otherwise checked in the forward-checking because it only considers nodes with unknown assignments.
+	 * @param patternNode The node in the graph pattern that might have self-connections
+	 * @param graphNode The corresponding node in the attributed graph to check against
+	 * @return {@code false} if any violations have been found, else {@code true}
+	 */
+	private boolean checkSelfConnectionRequirements(GPNode patternNode, N graphNode) {
+		for(GPEdge edge : pattern.graph().outgoingEdges().getOrDefault(patternNode, List.of())){
+			if(edge.target().equals(patternNode)){
+				List<AttributeRequirement> requirements = pattern.edgeRequirements().get(edge);
+				if(!isSelfEdgeSatisfied(graphNode, edge, requirements)){
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private boolean isSelfEdgeSatisfied(N graphNode, GPEdge edge, List<AttributeRequirement> requirements) {
+		for(E graphSelfEdge : graph.findOutgoingEdges(graphNode, edge.edgeType())){
+			if(graphSelfEdge.target().equals(graphNode) && checkAttributeRequirements(requirements, graphSelfEdge)){
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * Gets all edges of a specified node in the graph pattern
 	 * @param currentNode the node

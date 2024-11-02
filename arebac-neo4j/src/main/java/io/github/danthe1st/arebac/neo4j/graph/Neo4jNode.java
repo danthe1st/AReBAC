@@ -1,5 +1,5 @@
-package io.github.danthe1st.arebac.neo4j.graph;
 
+package io.github.danthe1st.arebac.neo4j.graph;
 import java.util.Objects;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
@@ -13,7 +13,7 @@ public class Neo4jNode implements AttributedNode {
 	public Neo4jNode(Node node) {
 		this.node = Objects.requireNonNull(node);
 	}
-	
+
 	@Override
 	public String id() {
 		return node.getElementId();
@@ -38,17 +38,17 @@ public class Neo4jNode implements AttributedNode {
 		default -> throw new UnsupportedOperationException("unknown property type");
 		};
 	}
-	
+
 	public Node getDBNode() {
 		return node;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return (int) node.getId();
 //		return Objects.hash(node);
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if(this == obj){
@@ -60,10 +60,10 @@ public class Neo4jNode implements AttributedNode {
 		Neo4jNode other = (Neo4jNode) obj;
 		return Objects.equals(node, other.node);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Neo4jNode [node=" + node + "]";
 	}
-	
+
 }
