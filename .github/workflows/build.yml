@@ -19,6 +19,7 @@ jobs:
       run: mvn -B install -DskipTests
     - name: Build with Maven
       run: mvn -B test
+  # Run benchmarks with GitHub Actions to see when something goes wrong and investigate locally
   benchmarks:
     runs-on: ubuntu-latest
     steps:

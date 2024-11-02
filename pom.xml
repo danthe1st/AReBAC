@@ -33,4 +33,19 @@
 			</plugin>
 		</plugins>
 	</build>
+	<name>AReBAC</name>
+	<url>https://github.com/danthe1st/AReBAC</url>
+	<description>Implementation of the Weaving and GP-Eval algorithms</description>
+	<inceptionYear>2024</inceptionYear>
+	<scm>
+		<url>https://github.com/danthe1st/AReBAC</url>
+	</scm>
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/danthe1st/AReBAC/issues</url>
+	</issueManagement>
+	<ciManagement>
+		<system>GitHub Actions</system>
+		<url>https://github.com/danthe1st/AReBAC/actions</url>
+	</ciManagement>
 </project>
