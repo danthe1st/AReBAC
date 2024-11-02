@@ -67,3 +67,5 @@ Aside from that, the GP-Eval implementation (in the `arebac-core` module) provid
 This project is available under both the MIT and GPL-3.0 license. Users can choose whichever license they prefer.
 
 Specific files or directories may be subject different licenses. In this case, the license is available in a `LICENSE` or `NOTICE` file of the directory in question or a parent directory.
+
+The `arebac-neo4j` module uses the [embedded Neo4J database](https://neo4j.com/docs/java-reference/current/java-embedded/) (specifically `neo4j-graphdb-api`) which is GPL-licensed (aside from commercial options) as a `provided` dependency.
