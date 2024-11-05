@@ -62,6 +62,10 @@ Aside from that, the GP-Eval implementation (in the `arebac-core` module) provid
 - `io.github.danthe1st.arebac.gpeval.events.ForwardCheckingEvent`: This event is fired during the forward-checking step of GP-Eval.
 - `io.github.danthe1st.arebac.gpeval.events.IntersectionEvent`: This event is fired during the intersection computation as part of the forward-checking step of GP-Eval
 
+## Environment
+
+This project uses Java 21 and Neo4J version 5.23.0.
+
 ## License
 
 This project is available under both the MIT and GPL-3.0 license. Users can choose whichever license they prefer.
