@@ -3,12 +3,12 @@ package io.github.danthe1st.arebac.jfr;
 import java.util.Objects;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedEdge;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
 import io.github.danthe1st.arebac.jfr.events.GetAttributeEvent;
 import io.github.danthe1st.arebac.jfr.events.GetAttributeEvent.ElementType;
 
-public class JFRRecordedGraphEdge<N extends AttributedNode, E extends AttributedGraphEdge<N>> implements AttributedGraphEdge<JFRRecordedGraphNode<N>> {
+public class JFRRecordedGraphEdge<N extends AttributedNode, E extends AttributedEdge<N>> implements AttributedEdge<JFRRecordedGraphNode<N>> {
 
 	private final E edge;
 

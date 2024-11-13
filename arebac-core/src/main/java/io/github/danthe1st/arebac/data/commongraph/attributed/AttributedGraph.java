@@ -9,7 +9,7 @@ import java.util.Collection;
  * @param <N> The type of the nodes
  * @param <E> The type of the edges
  */
-public interface AttributedGraph<N extends AttributedNode, E extends AttributedGraphEdge<N>> {
+public interface AttributedGraph<N extends AttributedNode, E extends AttributedEdge<N>> {
 	N findNodeById(String id);
 
 	Collection<E> findOutgoingEdges(N node, String edgeType);

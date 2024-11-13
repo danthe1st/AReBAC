@@ -16,7 +16,7 @@ import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeAware;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.StringAttribute;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedEdge;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
@@ -36,7 +36,7 @@ import io.github.danthe1st.arebac.gpeval.events.IntersectionEvent;
  * @param <N> The type of nodes in the graph
  * @param <E> The type of edges in the graph
  */
-public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdge<N>> {
+public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>> {
 
 	private final AttributedGraph<N, E> graph;
 	private final GraphPattern pattern;
@@ -51,7 +51,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 
 	private Set<List<N>> results = new HashSet<>();
 
-	public static <N extends AttributedNode, E extends AttributedGraphEdge<N>> Set<List<N>> evaluate(AttributedGraph<N, E> graph, GraphPattern pattern) {
+	public static <N extends AttributedNode, E extends AttributedEdge<N>> Set<List<N>> evaluate(AttributedGraph<N, E> graph, GraphPattern pattern) {
 		GPEval<N, E> eval = new GPEval<>(graph, pattern);
 		try{
 			eval.init();
@@ -423,10 +423,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedGraphEdg
 		if(relevantEdge.isOutgoing()){
 			// TODO make this more efficient by finding the exact relevant edges
 			graphEdges = graph.findOutgoingEdges(currentNodeInDB, relevantEdge.edgeType());
-			neighborFinder = AttributedGraphEdge::target;
+			neighborFinder = AttributedEdge::target;
 		}else{
 			graphEdges = graph.findIncomingEdges(currentNodeInDB, relevantEdge.edgeType());
-			neighborFinder = AttributedGraphEdge::source;
+			neighborFinder = AttributedEdge::source;
 		}
 		graphEdges = Objects.requireNonNullElse(graphEdges, List.of());
 		List<N> neighborsSatisfyingRequirements = new ArrayList<>();

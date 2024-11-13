@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedEdge;
 
 /**
  * Edge of an in-memory attributed graph.
@@ -13,7 +13,7 @@ import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdg
 public record InMemoryGraphEdge(
 		InMemoryGraphNode source, InMemoryGraphNode target,
 		String id, String edgeType,
-		Map<String, AttributeValue<?>> attributes) implements AttributedGraphEdge<InMemoryGraphNode> {
+		Map<String, AttributeValue<?>> attributes) implements AttributedEdge<InMemoryGraphNode> {
 	public InMemoryGraphEdge {
 		Objects.requireNonNull(source);
 		Objects.requireNonNull(target);

@@ -3,10 +3,10 @@ package io.github.danthe1st.arebac.neo4j.graph;
 import java.util.Objects;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedEdge;
 import org.neo4j.graphdb.Relationship;
 
-public class Neo4jEdge implements AttributedGraphEdge<Neo4jNode> {
+public class Neo4jEdge implements AttributedEdge<Neo4jNode> {
 	private final Relationship relationship;
 	
 	public Neo4jEdge(Relationship relationship) {

@@ -5,13 +5,13 @@ import java.util.Objects;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraphEdge;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedEdge;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
 import io.github.danthe1st.arebac.jfr.events.FindEdgesEvent;
 import io.github.danthe1st.arebac.jfr.events.FindEdgesEvent.Direction;
 import io.github.danthe1st.arebac.jfr.events.FindNodeEvent;
 
-public class JFRRecordedGraphWrapper<N extends AttributedNode, E extends AttributedGraphEdge<N>> implements AttributedGraph<JFRRecordedGraphNode<N>, JFRRecordedGraphEdge<N, E>> {
+public class JFRRecordedGraphWrapper<N extends AttributedNode, E extends AttributedEdge<N>> implements AttributedGraph<JFRRecordedGraphNode<N>, JFRRecordedGraphEdge<N, E>> {
 
 	private final AttributedGraph<N, E> graph;
 	
