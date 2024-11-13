@@ -64,7 +64,7 @@ Aside from that, the GP-Eval implementation (in the `arebac-core` module) provid
 
 ## Environment
 
-This project uses Java 21 and Neo4J version 5.23.0.
+This project uses Java 21 and Neo4J version 5.25.1.
 
 ## License
 
