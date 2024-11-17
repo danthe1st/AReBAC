@@ -30,7 +30,7 @@ public record AttributeRequirement(
 		boolean boolToEnsureExhaustivenessChecking = switch(operator) {
 		case GREATER_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL ->
 			checkNumeric(value, val -> true);
-		case EQUAL -> true;
+		case EQUAL, NOT_EQUAL -> true;
 		};
 		assert boolToEnsureExhaustivenessChecking;
 		
@@ -51,6 +51,7 @@ public record AttributeRequirement(
 		return switch(operator) {
 		case EQUAL ->
 			attributeValue.equals(value);
+		case NOT_EQUAL -> !attributeValue.equals(value);
 		case LESS_THAN ->
 			checkNumeric(attributeValue, val -> val.lessThan(value));
 		case LESS_THAN_OR_EQUAL ->

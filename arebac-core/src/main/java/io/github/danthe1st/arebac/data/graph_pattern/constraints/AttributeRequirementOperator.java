@@ -5,6 +5,7 @@ package io.github.danthe1st.arebac.data.graph_pattern.constraints;
  */
 public enum AttributeRequirementOperator {
 	EQUAL,
+	NOT_EQUAL,
 	
 	LESS_THAN,
 	LESS_THAN_OR_EQUAL,
