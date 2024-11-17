@@ -1,7 +1,6 @@
 package io.github.danthe1st.arebac.neo4j.tests.airbnb;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +134,7 @@ public class AirbnbBenchmark {
 				hostPatternInfo = new PatternInfo<>(List.of("131304391", "155715332", "404944621"), Scenario1Test::createAuthorizedCetAllReviewsFromHostGraphPattern);
 				reviewerPatternInfo = new PatternInfo<>(List.of("272671293", "227163707", "268281268", "31292360"), Scenario1Test::createAuthorizedGetAllReviewsFromReviewerGraphPattern);
 				scenario2PatternInfo = new PatternInfo<>(List.of(new Scenario2Id("278934759", "1310402"), new Scenario2Id("363134483", "1310402")), id -> Scenario2Test.editListingInNeighborhoodPattern(id.subjectId(), id.neighborhoodId()));
-			}catch(IOException | IncorrectFormat | InterruptedException | URISyntaxException e){
+			}catch(IOException | IncorrectFormat e){
 				throw new RuntimeException("cannot initialize benchmark state", e);
 			}
 		}

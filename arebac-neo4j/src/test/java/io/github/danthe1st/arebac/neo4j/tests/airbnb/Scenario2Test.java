@@ -5,7 +5,6 @@ import static io.github.danthe1st.arebac.data.graph_pattern.constraints.Attribut
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +38,7 @@ class Scenario2Test {
 	private GraphDatabaseService database;
 	
 	@BeforeEach
-	void setUp() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
+	void setUp() throws IOException, IncorrectFormat {
 		database = AirbnbSetup.getDatabase();
 	}
 

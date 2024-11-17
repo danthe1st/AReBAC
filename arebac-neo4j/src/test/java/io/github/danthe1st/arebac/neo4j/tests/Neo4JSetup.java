@@ -35,7 +35,7 @@ public class Neo4JSetup {
 	public static Label ANSWER = Label.label("Answer");
 	public static Label COMMENT = Label.label("Comment");
 
-	public static synchronized GraphDatabaseService createDatabase(Path dbDirectory, URL dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
+	public static synchronized GraphDatabaseService createDatabase(Path dbDirectory, URL dumpLocation) throws IOException, IncorrectFormat {
 		boolean databaseExists = Files.exists(dbDirectory);
 		DatabaseManagementService databaseManagementService = createManagementService(dbDirectory);
 		if(!databaseExists){
@@ -61,7 +61,7 @@ public class Neo4JSetup {
 		return graphDb;
 	}
 
-	private static void loadDB(Path dbDirectory, URL dumpLocation) throws IOException, IncorrectFormat, InterruptedException {
+	private static void loadDB(Path dbDirectory, URL dumpLocation) throws IOException, IncorrectFormat {
 		DatabaseLayout layout = DatabaseLayout.of(Neo4jLayout.of(dbDirectory), DB_NAME);
 		deleteRecursively(layout.databaseDirectory());
 

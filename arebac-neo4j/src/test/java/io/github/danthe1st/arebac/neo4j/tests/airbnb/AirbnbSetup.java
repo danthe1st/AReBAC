@@ -1,7 +1,6 @@
 package io.github.danthe1st.arebac.neo4j.tests.airbnb;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 
 import io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup;
@@ -19,7 +18,7 @@ public class AirbnbSetup {
 	
 	public static final String NEIGHBORHOOD = "Neighborhood";
 	
-	public static synchronized GraphDatabaseService getDatabase() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
+	public static synchronized GraphDatabaseService getDatabase() throws IOException, IncorrectFormat {
 		if(graphDb == null){
 			graphDb = Neo4JSetup.createDatabase(Path.of("testdb", "airbnb"), AirbnbSetup.class.getClassLoader().getResource("testdumps/airbnb/airbnb.dump"));
 		}
