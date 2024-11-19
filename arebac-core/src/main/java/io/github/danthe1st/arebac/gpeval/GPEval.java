@@ -15,8 +15,8 @@ import java.util.function.Function;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeAware;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.StringAttribute;
-import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedEdge;
+import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
@@ -312,7 +312,9 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 				numberOfPossibilities = possibilities;
 			}
 		}
-		Objects.requireNonNull(candidate);
+		if (candidate == null) {
+			throw new IllegalStateException("No candidate node found. Make sure all nodes in the graph pattern are have some connection to a fixed node.");
+		}
 		return candidate;
 	}
 
