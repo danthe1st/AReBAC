@@ -91,6 +91,9 @@ public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 	@Override
 	public Neo4jNode getNodeByUniqueAttribute(String nodeType, String key, AttributeValue<?> value) {
 		Node node = tx.findNode(Label.label(nodeType), key, value.value());
+		if(node == null){
+			return null;
+		}
 		return new Neo4jNode(node);
 	}
 }
