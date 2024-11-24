@@ -2,7 +2,11 @@ package io.github.danthe1st.arebac.neo4j.graph;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue;
 import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
@@ -18,6 +22,7 @@ import org.neo4j.graphdb.schema.ConstraintType;
 
 public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 	private final Transaction tx;
+	private final Map<String, Set<String>> uniqueAttributesPerNodeType = new HashMap<>();
 	
 	public Neo4jDB(Transaction tx) {
 		this.tx = tx;
@@ -50,16 +55,37 @@ public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 	
 	@Override
 	public boolean isAttributeUniqueForNodeType(String key, String nodeType) {
+		Set<String> uniqueAttributeNames = uniqueAttributesPerNodeType.get(nodeType);
+		if(uniqueAttributeNames == null){
+			uniqueAttributeNames = findUniqueAttributeNames(nodeType);
+			uniqueAttributesPerNodeType.put(key, uniqueAttributeNames);
+		}
+		
+		return uniqueAttributeNames.contains(key);
+	}
+
+	private Set<String> findUniqueAttributeNames(String nodeType) {
+		Set<String> uniqueNodeTypes = new HashSet<>();
 		for(ConstraintDefinition constraint : tx.schema().getConstraints(Label.label(nodeType))){
 			if(constraint.isConstraintType(ConstraintType.UNIQUENESS)){
-				for(String constraintKey : constraint.getPropertyKeys()){
-					if(constraintKey.equals(key)){
-						return true;
-					}
-				}
+				checkConstraint(constraint, uniqueNodeTypes);
 			}
 		}
-		return false;
+		return Set.copyOf(uniqueNodeTypes);
+	}
+
+	private void checkConstraint(ConstraintDefinition constraint, Set<String> uniqueNodeTypes) {
+		String attributeName = null;
+		for(String constraintKey : constraint.getPropertyKeys()){
+			if(attributeName != null){
+				// we only want unique constraints with a single attribute
+				return;
+			}
+			attributeName = constraintKey;
+		}
+		if(attributeName != null){
+			uniqueNodeTypes.add(attributeName);
+		}
 	}
 	
 	@Override
