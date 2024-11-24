@@ -20,6 +20,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -29,96 +30,78 @@ public class AirbnbBenchmark {
 
 	@Benchmark
 	public void scenario1GetReviewsFromHostGPEvalWithWeaving(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
-			Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.hostPatternInfo.computeNextPattern());
-			result.forEach(bh::consume);
-		}
+		Neo4jDB db = new Neo4jDB(state.transaction);
+		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.hostPatternInfo.computeNextPattern());
+		result.forEach(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario1GetReviewsFromHostGPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
+		Neo4jDB db = new Neo4jDB(state.transaction);
 			Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.hostPatternInfo.nextLoadedPattern());
 			result.forEach(bh::consume);
-		}
 	}
 
 	@Benchmark
 	public void scenario1GetReviewsFromHostNeo4J(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Result result = tx.execute("""
-					MATCH (r1:Reviewer)-[: WROTE]->(r2:Review) -[: REVIEWS]->(l: Listing)<-[HOSTS]-(h: Host)
-					WHERE h.host_id="$hostId"
-					RETURN r1,r2
-					""", Map.of("hostId", state.hostPatternInfo.nextId()));
+		Result result = state.transaction.execute("""
+				MATCH (r1:Reviewer)-[: WROTE]->(r2:Review) -[: REVIEWS]->(l: Listing)<-[HOSTS]-(h: Host)
+				WHERE h.host_id="$hostId"
+				RETURN r1,r2
+				""", Map.of("hostId", state.hostPatternInfo.nextId()));
 
-			result.forEachRemaining(bh::consume);
-		}
+		result.forEachRemaining(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario1GetReviewsFromReviewerGPEvalWithWeaving(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
-			Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.reviewerPatternInfo.computeNextPattern());
-			result.forEach(bh::consume);
-		}
+		Neo4jDB db = new Neo4jDB(state.transaction);
+		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.reviewerPatternInfo.computeNextPattern());
+		result.forEach(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario1GetReviewsFromReviewerGPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
-			Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.reviewerPatternInfo.nextLoadedPattern());
-			result.forEach(bh::consume);
-		}
+		Neo4jDB db = new Neo4jDB(state.transaction);
+		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.reviewerPatternInfo.nextLoadedPattern());
+		result.forEach(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario1GetReviewsFromReviewerNeo4J(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Result result = tx.execute("""
-					MATCH (r:Reviewer) -[: WROTE]-> (r2: Review)
-					WHERE r.reviewer_id="REVIEWER_ID"
-					RETURN r
-					""", Map.of("hostId", state.reviewerPatternInfo.nextId()));
+		Result result = state.transaction.execute("""
+				MATCH (r:Reviewer) -[: WROTE]-> (r2: Review)
+				WHERE r.reviewer_id="REVIEWER_ID"
+				RETURN r
+				""", Map.of("hostId", state.reviewerPatternInfo.nextId()));
 
-			result.forEachRemaining(bh::consume);
-		}
+		result.forEachRemaining(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario2GPEvalWithWeaving(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
-			Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.scenario2PatternInfo.computeNextPattern());
-			result.forEach(bh::consume);
-		}
+		Neo4jDB db = new Neo4jDB(state.transaction);
+		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.scenario2PatternInfo.computeNextPattern());
+		result.forEach(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario2GPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
-			Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.scenario2PatternInfo.nextLoadedPattern());
-			result.forEach(bh::consume);
-		}
+		Neo4jDB db = new Neo4jDB(state.transaction);
+		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.scenario2PatternInfo.nextLoadedPattern());
+		result.forEach(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario2Neo4J(AirbnbState state, Blackhole bh) {
-		try(Transaction tx = state.database.beginTx()){
-			Scenario2Id id = state.scenario2PatternInfo.nextId();
-			Result result = tx.execute("""
-					MATCH (h: Host) -[: HOSTS]-> (l: Listing) -[: IN_NEIGHBORHOOD]-> (n: Neighborhood)
-					WHERE h.host_id = $hostId AND n.neighborhood_id = $neighborhoodId
-					RETURN l
-					""", Map.of("hostId", id.subjectId(), "neighborhoodId", id.neighborhoodId()));
+		Scenario2Id id = state.scenario2PatternInfo.nextId();
+		Result result = state.transaction.execute("""
+				MATCH (h: Host) -[: HOSTS]-> (l: Listing) -[: IN_NEIGHBORHOOD]-> (n: Neighborhood)
+				WHERE h.host_id = $hostId AND n.neighborhood_id = $neighborhoodId
+				RETURN l
+				""", Map.of("hostId", id.subjectId(), "neighborhoodId", id.neighborhoodId()));
 
-			result.forEachRemaining(bh::consume);
-		}
+		result.forEachRemaining(bh::consume);
 	}
 
 	@State(Scope.Thread)
@@ -127,10 +110,12 @@ public class AirbnbBenchmark {
 		private final PatternInfo<String> hostPatternInfo;
 		private final PatternInfo<String> reviewerPatternInfo;
 		private final PatternInfo<Scenario2Id> scenario2PatternInfo;
+		private Transaction transaction;
 
 		public AirbnbState() {
 			try{
 				database = AirbnbSetup.getDatabase();
+				transaction = database.beginTx();
 				hostPatternInfo = new PatternInfo<>(List.of("131304391", "155715332", "404944621"), Scenario1Test::createAuthorizedCetAllReviewsFromHostGraphPattern);
 				reviewerPatternInfo = new PatternInfo<>(List.of("272671293", "227163707", "268281268", "31292360"), Scenario1Test::createAuthorizedGetAllReviewsFromReviewerGraphPattern);
 				scenario2PatternInfo = new PatternInfo<>(List.of(new Scenario2Id("278934759", "1310402"), new Scenario2Id("363134483", "1310402")), id -> Scenario2Test.editListingInNeighborhoodPattern(id.subjectId(), id.neighborhoodId()));
@@ -145,6 +130,11 @@ public class AirbnbBenchmark {
 
 		public PatternInfo<String> getReviewerPatternInfo() {
 			return reviewerPatternInfo;
+		}
+		
+		@TearDown
+		public void closeTransaction() {
+			transaction.close();
 		}
 
 	}
