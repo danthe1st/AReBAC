@@ -58,7 +58,7 @@ public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 		Set<String> uniqueAttributeNames = uniqueAttributesPerNodeType.get(nodeType);
 		if(uniqueAttributeNames == null){
 			uniqueAttributeNames = findUniqueAttributeNames(nodeType);
-			uniqueAttributesPerNodeType.put(key, uniqueAttributeNames);
+			uniqueAttributesPerNodeType.put(nodeType, uniqueAttributeNames);
 		}
 		
 		return uniqueAttributeNames.contains(key);
