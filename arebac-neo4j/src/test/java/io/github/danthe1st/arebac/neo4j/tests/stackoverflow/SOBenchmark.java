@@ -1,5 +1,8 @@
 package io.github.danthe1st.arebac.neo4j.tests.stackoverflow;
 
+import static io.github.danthe1st.arebac.data.commongraph.attributed.AttributeValue.attribute;
+import static io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator.EQUAL;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -7,6 +10,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import io.github.danthe1st.arebac.data.graph_pattern.GPEdge;
+import io.github.danthe1st.arebac.data.graph_pattern.GPGraph;
+import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
+import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
+import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.gpeval.GPEval;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
@@ -30,8 +38,7 @@ public class SOBenchmark {
 	
 	@Benchmark
 	public void usersCommentingTogetherGPEval(SOBenchmarkState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-		Set<List<Neo4jNode>> result = GPEval.evaluate(db, SOTest.createCommentsToSameQuestionInTagPattern("name", state.nextTagName()));
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, SOTest.createCommentsToSameQuestionInTagPattern("name", state.nextTagName()));
 		result.forEach(bh::consume);
 	}
 	
@@ -54,8 +61,7 @@ public class SOBenchmark {
 	
 	@Benchmark
 	public void selfAnswersInTagGPEval(SOBenchmarkState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-		Set<List<Neo4jNode>> result = GPEval.evaluate(db, SOTest.createSelfAnswerPatternWithTagName(state.nextTagName()));
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, SOTest.createSelfAnswerPatternWithTagName(state.nextTagName()));
 		result.forEach(bh::consume);
 	}
 	
@@ -75,8 +81,7 @@ public class SOBenchmark {
 	
 	@Benchmark
 	public void selfAnswersByUserGPEval(SOBenchmarkUUIDState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-		Set<List<Neo4jNode>> result = GPEval.evaluate(db, SOTest.createSelfAnswerPatternWithUUID(state.nextUUID()));
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, SOTest.createSelfAnswerPatternWithUUID(state.nextUUID()));
 		result.forEach(bh::consume);
 	}
 	
@@ -94,17 +99,63 @@ public class SOBenchmark {
 		}
 	}
 	
+	@Benchmark
+	public void multipleSelfConnectionsbetweenUserAndQuestionNeo4J(SOBenchmarkUUIDState state, Blackhole bh) {
+		try(Result result = state.transaction.execute(
+				"""
+						MATCH (u:User)-[:ASKED]->(q:Question)
+						MATCH (u:User)-[:ASKED]->(q:Question)
+						MATCH (u:User)-[:ASKED]->(q:Question)
+						MATCH (u:User)-[:ASKED]->(q:Question)
+						MATCH (u:User)-[:ASKED]->(q:Question)
+						MATCH (u:User)-[:ASKED]->(q:Question)
+						MATCH (u:User)-[:ASKED]->(q:Question)
+						WHERE u.uuid=$uuid
+						RETURN q
+						""",
+				Map.of("uuid", state.nextUUID())
+		)){
+			result.forEachRemaining(bh::consume);
+		}
+	}
+	
+	@Benchmark
+	public void multipleSelfConnectionsbetweenUserAndQuestionGPEval(SOBenchmarkUUIDState state, Blackhole bh) {
+		GPNode user = new GPNode("u", "User");
+		GPNode question = new GPNode("q", "Question");
+		GraphPattern pattern = new GraphPattern(
+				new GPGraph(
+						List.of(user, question),
+						List.of(
+								new GPEdge(user, question, null, "ASKED"),
+								new GPEdge(user, question, null, "ASKED"),
+								new GPEdge(user, question, null, "ASKED"),
+								new GPEdge(user, question, null, "ASKED"),
+								new GPEdge(user, question, null, "ASKED"),
+								new GPEdge(user, question, null, "ASKED"),
+								new GPEdge(user, question, null, "ASKED")
+						)
+				),
+				List.of(),
+				Map.of(user, List.of(new AttributeRequirement("uuid", EQUAL, attribute(state.nextUUID())))),
+				Map.of(), List.of(question), Map.of()
+		);
+		GPEval.evaluate(state.neo4jDB, pattern);
+	}
+	
 	@State(Scope.Thread)
 	public static class SOBenchmarkState {
 		private final List<String> tagNames = List.of("neo4j", "cypher", "java");
 		private int currentTagIndex = 0;
 		private final GraphDatabaseService database;
 		private final Transaction transaction;
+		private final Neo4jDB neo4jDB;
 		
 		public SOBenchmarkState() {
 			try{
 				database = SOSetup.getDatabase();
 				transaction = database.beginTx();
+				neo4jDB = new Neo4jDB(transaction);
 			}catch(IOException | IncorrectFormat | InterruptedException | URISyntaxException e){
 				throw new RuntimeException(e);
 			}
@@ -128,11 +179,13 @@ public class SOBenchmark {
 		private int currentTagIndex = 0;
 		private final GraphDatabaseService database;
 		private final Transaction transaction;
+		private final Neo4jDB neo4jDB;
 		
 		public SOBenchmarkUUIDState() {
 			try{
 				database = SOSetup.getDatabase();
 				transaction = database.beginTx();
+				neo4jDB = new Neo4jDB(transaction);
 			}catch(IOException | IncorrectFormat | InterruptedException | URISyntaxException e){
 				throw new RuntimeException(e);
 			}

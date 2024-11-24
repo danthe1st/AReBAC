@@ -30,16 +30,14 @@ public class AirbnbBenchmark {
 
 	@Benchmark
 	public void scenario1GetReviewsFromHostGPEvalWithWeaving(AirbnbState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.hostPatternInfo.computeNextPattern());
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, state.hostPatternInfo.computeNextPattern());
 		result.forEach(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario1GetReviewsFromHostGPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-			Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.hostPatternInfo.nextLoadedPattern());
-			result.forEach(bh::consume);
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, state.hostPatternInfo.nextLoadedPattern());
+		result.forEach(bh::consume);
 	}
 
 	@Benchmark
@@ -55,15 +53,13 @@ public class AirbnbBenchmark {
 
 	@Benchmark
 	public void scenario1GetReviewsFromReviewerGPEvalWithWeaving(AirbnbState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.reviewerPatternInfo.computeNextPattern());
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, state.reviewerPatternInfo.computeNextPattern());
 		result.forEach(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario1GetReviewsFromReviewerGPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.reviewerPatternInfo.nextLoadedPattern());
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, state.reviewerPatternInfo.nextLoadedPattern());
 		result.forEach(bh::consume);
 	}
 
@@ -80,15 +76,13 @@ public class AirbnbBenchmark {
 
 	@Benchmark
 	public void scenario2GPEvalWithWeaving(AirbnbState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.scenario2PatternInfo.computeNextPattern());
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, state.scenario2PatternInfo.computeNextPattern());
 		result.forEach(bh::consume);
 	}
 
 	@Benchmark
 	public void scenario2GPEvalWithoutWeaving(AirbnbState state, Blackhole bh) {
-		Neo4jDB db = new Neo4jDB(state.transaction);
-		Set<List<Neo4jNode>> result = GPEval.evaluate(db, state.scenario2PatternInfo.nextLoadedPattern());
+		Set<List<Neo4jNode>> result = GPEval.evaluate(state.neo4jDB, state.scenario2PatternInfo.nextLoadedPattern());
 		result.forEach(bh::consume);
 	}
 
@@ -111,11 +105,13 @@ public class AirbnbBenchmark {
 		private final PatternInfo<String> reviewerPatternInfo;
 		private final PatternInfo<Scenario2Id> scenario2PatternInfo;
 		private Transaction transaction;
+		private final Neo4jDB neo4jDB;
 
 		public AirbnbState() {
 			try{
 				database = AirbnbSetup.getDatabase();
 				transaction = database.beginTx();
+				neo4jDB = new Neo4jDB(transaction);
 				hostPatternInfo = new PatternInfo<>(List.of("131304391", "155715332", "404944621"), Scenario1Test::createAuthorizedCetAllReviewsFromHostGraphPattern);
 				reviewerPatternInfo = new PatternInfo<>(List.of("272671293", "227163707", "268281268", "31292360"), Scenario1Test::createAuthorizedGetAllReviewsFromReviewerGraphPattern);
 				scenario2PatternInfo = new PatternInfo<>(List.of(new Scenario2Id("278934759", "1310402"), new Scenario2Id("363134483", "1310402")), id -> Scenario2Test.editListingInNeighborhoodPattern(id.subjectId(), id.neighborhoodId()));
@@ -131,7 +127,7 @@ public class AirbnbBenchmark {
 		public PatternInfo<String> getReviewerPatternInfo() {
 			return reviewerPatternInfo;
 		}
-		
+
 		@TearDown
 		public void closeTransaction() {
 			transaction.close();
