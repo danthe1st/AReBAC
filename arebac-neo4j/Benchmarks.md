@@ -23,6 +23,8 @@ The following command can be used for checking whether all benchmarks run succes
 java -cp target/classes:target/test-classes:target/all-dependencies/*:target/arebac-neo4j-0.0.1-SNAPSHOT.jar:../arebac-core/target/classes/ org.openjdk.jmh.Main -f 1 -i 1 -wi 0 -r 100ms -foe true
 ```
 
+To store the output in a `jmh-result.csv` file, add `-rf csv` to the command.
+
 ## profiling
 
 In order to profile a specific benchmark using [`async-profiler`](https://github.com/async-profiler/async-profiler), first download and extract `async-profiler` and then use the following command (replace `/PATH/TO/async-profiler` with the path you extracted `async-profiler` to):

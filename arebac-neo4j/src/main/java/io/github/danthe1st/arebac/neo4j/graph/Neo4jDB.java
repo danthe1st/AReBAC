@@ -13,6 +13,7 @@ import io.github.danthe1st.arebac.data.commongraph.attributed.AttributedGraph;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.ResourceIterable;
@@ -41,7 +42,12 @@ public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 	
 	@Override
 	public Neo4jNode findNodeById(String id) {
-		return new Neo4jNode(tx.getNodeByElementId(id));
+		try{
+			Node dbNode = tx.getNodeByElementId(id);
+			return new Neo4jNode(dbNode);
+		}catch(NotFoundException | IllegalArgumentException e){
+			return null;
+		}
 	}
 	
 	@Override
