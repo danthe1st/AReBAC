@@ -24,6 +24,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.MutualExclusionConstraint;
+import io.github.danthe1st.arebac.gpeval.GPNodeSet.GPNodeSetFactory;
 import io.github.danthe1st.arebac.gpeval.events.FilterMutualExclusionConstraintsEvent;
 import io.github.danthe1st.arebac.gpeval.events.ForwardCheckingEvent;
 import io.github.danthe1st.arebac.gpeval.events.IntersectionEvent;
@@ -41,8 +42,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	private final AttributedGraph<N, E> graph;
 	private final GraphPattern pattern;
 
-	private final Map<GPNode, Set<GPNode>> mutualExclusionConstraints;
+	private final GPNodeSetFactory nodeSetFactory;
 
+	private final Map<GPNode, GPNodeSet> mutualExclusionConstraints;
+	
 	// node in pattern -> list of nodes in graph
 	private Map<GPNode, List<N>> candidates = new HashMap<>();
 
@@ -69,7 +72,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 		Objects.requireNonNull(pattern);
 		this.graph = graph;
 		this.pattern = pattern;
-		Map<GPNode, Set<GPNode>> exclusionConstraints = new HashMap<>();
+		Map<GPNode, GPNodeSet> exclusionConstraints = new HashMap<>();
+		this.nodeSetFactory = new GPNodeSetFactory(pattern);
 		for(MutualExclusionConstraint constraint : pattern.mutualExclusionConstraints()){
 			GPNode first = constraint.first();
 			GPNode second = constraint.second();
@@ -87,18 +91,20 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	 * @param candidates candidate nodes in the attributed graph for each vertex in the pattern where candidates have been discovered, copied in recursive calls
 	 * @param assignments vertices assigned so far, copied in recursive calls
 	 * @param results a {@link Set} storing the results of each pattern, shared between recursive calls
+	 * @param nodeSetFactory factory for {@link GPNodeSet} objects with the current graph pattern
 	 */
-	private GPEval(AttributedGraph<N, E> graph, GraphPattern pattern, Map<GPNode, Set<GPNode>> mutualExclusionConstraints, Map<GPNode, List<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results) {
+	private GPEval(AttributedGraph<N, E> graph, GraphPattern pattern, Map<GPNode, GPNodeSet> mutualExclusionConstraints, Map<GPNode, List<N>> candidates, Map<GPNode, N> assignments, Set<List<N>> results, GPNodeSetFactory nodeSetFactory) {
 		this.graph = graph;
 		this.pattern = pattern;
 		this.mutualExclusionConstraints = mutualExclusionConstraints;
 		this.candidates = candidates;
 		this.assignments = assignments;
 		this.results = results;
+		this.nodeSetFactory = nodeSetFactory;
 	}
 
-	private void addToMultimap(Map<GPNode, Set<GPNode>> mutualExclusionConstraints, GPNode key, GPNode value) {
-		mutualExclusionConstraints.merge(key, new HashSet<>(Set.of(value)), (a, b) -> {
+	private void addToMultimap(Map<GPNode, GPNodeSet> mutualExclusionConstraints, GPNode key, GPNode value) {
+		mutualExclusionConstraints.merge(key, nodeSetFactory.createWithSingleElement(value), (a, b) -> {
 			a.addAll(b);
 			return a;
 		});
@@ -180,7 +186,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	 * @param incomingConflicts a mapping storing information on which vertex could result in conflicts with which other nodes
 	 * @return a {@link Set} of vertices when backjumping should stop
 	 */
-	private Set<GPNode> run(Map<GPNode, List<GPNode>> incomingConflicts) {// returns nodes for backjumping
+	private GPNodeSet run(Map<GPNode, GPNodeSet> incomingConflicts) {// returns nodes for backjumping
 		if(assignments.size() == pattern.graph().nodes().size()){
 
 			List<N> result = new ArrayList<>();
@@ -191,31 +197,31 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 			results.add(List.copyOf(result));
 			// backjump until any of the returned nodes are reassigned
 			// there is no point in looking at assignments leading to the same returned nodes
-			return Set.copyOf(pattern.returnedNodes());
+			return nodeSetFactory.copyOf(pattern.returnedNodes());
 		}
 
 		boolean deadEnd = true;
 		// all vertices where conflicts happened, used for backjumping
 		// if a conflict happened on a vertex and that vertex is reassigned, backjumping should stop/the search should continue
-		Set<GPNode> conflicts = new HashSet<>();
-		Set<GPNode> outgoingConflicts = new HashSet<>();
+		GPNodeSet conflicts = nodeSetFactory.createEmpty();
+		GPNodeSet outgoingConflicts = nodeSetFactory.createEmpty();
 
 		GPNode currentNode = pickNextNode();
 		List<N> currentNodeCandidates = candidates.get(currentNode);
-		Set<GPNode> exclusionConstraints = mutualExclusionConstraints.get(currentNode);
+		GPNodeSet exclusionConstraints = mutualExclusionConstraints.get(currentNode);
 		if(exclusionConstraints != null){
-			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, Objects.requireNonNullElse(incomingConflicts.get(currentNode), new ArrayList<>()));
+			filterMutualExclusionConstraints(currentNodeCandidates, exclusionConstraints, Objects.requireNonNullElse(incomingConflicts.get(currentNode), nodeSetFactory.createEmpty()));
 		}
 		for(N candidateNode : currentNodeCandidates){
 			Map<GPNode, List<N>> newCandidates = deepCopyExceptKey(candidates, currentNode);
 			Map<GPNode, N> newAssignments = new HashMap<>(assignments);
 			newAssignments.put(currentNode, candidateNode);
-			Map<GPNode, List<GPNode>> newIncomingConflicts = deepCopy(incomingConflicts);
-			GPEval<N, E> child = new GPEval<>(graph, pattern, mutualExclusionConstraints, newCandidates, newAssignments, results);
+			Map<GPNode, GPNodeSet> newIncomingConflicts = deepCopy(incomingConflicts);
+			GPEval<N, E> child = new GPEval<>(graph, pattern, mutualExclusionConstraints, newCandidates, newAssignments, results, nodeSetFactory);
 			boolean valid = child.forwardChecking(currentNode, newIncomingConflicts, outgoingConflicts);
 			if(valid){
 				deadEnd = false;
-				Set<GPNode> jump = child.run(newIncomingConflicts);// the paper uses incomingConflicts (confIn) here but that's just a missing single quote
+				GPNodeSet jump = child.run(newIncomingConflicts);// the paper uses incomingConflicts (confIn) here but that's just a missing single quote
 				// backjumping:
 				// if the currently assigned node is within the returned vertices, continue checking
 				if(!jump.isEmpty() && !jump.contains(currentNode)){
@@ -267,16 +273,14 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	}
 
 	/**
-	 * create a deep copy of a {@code Map<K, List<V>>}
-	 * @param <K> the key type
-	 * @param <V> the value element type
+	 * create a deep copy of a {@code Map<GPNode, GPNodeSet>}
 	 * @param multimap the {@link Map} to copy
 	 * @return the copy of the map
 	 */
-	private <K, V> Map<K, List<V>> deepCopy(Map<K, List<V>> multimap) {
-		Map<K, List<V>> result = HashMap.newHashMap(multimap.size());
-		for(Entry<K, List<V>> entry : multimap.entrySet()){
-			result.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+	private Map<GPNode, GPNodeSet> deepCopy(Map<GPNode, GPNodeSet> multimap) {
+		Map<GPNode, GPNodeSet> result = HashMap.newHashMap(multimap.size());
+		for(Entry<GPNode, GPNodeSet> entry : multimap.entrySet()){
+			result.put(entry.getKey(), entry.getValue().copy());
 		}
 		return result;
 	}
@@ -287,8 +291,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	 * @param conflicts the {@link Set} of conflicts to modify
 	 * @param currentNode the node relevant for incoming conflicts
 	 */
-	private void addAllIncomingConflictsForNode(Map<GPNode, List<GPNode>> incomingConflicts, Set<GPNode> conflicts, GPNode currentNode) {
-		List<GPNode> nodeIncomingConflicts = incomingConflicts.get(currentNode);
+	private void addAllIncomingConflictsForNode(Map<GPNode, GPNodeSet> incomingConflicts, GPNodeSet conflicts, GPNode currentNode) {
+		GPNodeSet nodeIncomingConflicts = incomingConflicts.get(currentNode);
 		if(nodeIncomingConflicts != null){
 			conflicts.addAll(nodeIncomingConflicts);
 		}
@@ -324,7 +328,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	 * @param exclusionConstraints all vertices that must have different assignments than the candidates
 	 * @param incomingConflicts vertices violating mutual exclusion constraints are added to this collection
 	 */
-	private void filterMutualExclusionConstraints(List<N> candidatesForNode, Set<GPNode> exclusionConstraints, List<GPNode> incomingConflicts) {
+	private void filterMutualExclusionConstraints(List<N> candidatesForNode, GPNodeSet exclusionConstraints, GPNodeSet incomingConflicts) {
 		FilterMutualExclusionConstraintsEvent event = new FilterMutualExclusionConstraintsEvent();
 		event.begin();
 		for(Iterator<N> it = candidatesForNode.iterator(); it.hasNext();){
@@ -339,7 +343,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	 * @param incomingConflicts if the vertex violates a mutual exclusion constraint, the other vertex is added as an incoming conflict
 	 * @param it used for obtaining the node and removing it if it matches a mutual exclusion constraint
 	 */
-	private void filterMutualExclusionConstraintWithSpecificCandidate(Set<GPNode> exclusionConstraints, List<GPNode> incomingConflicts, Iterator<N> it) {
+	private void filterMutualExclusionConstraintWithSpecificCandidate(GPNodeSet exclusionConstraints, GPNodeSet incomingConflicts, Iterator<N> it) {
 		N graphCandidate = it.next();
 		for(GPNode exclusionConstraint : exclusionConstraints){
 			if(graphCandidate.equals(assignments.get(exclusionConstraint))){
@@ -363,7 +367,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	 * @param outgoingConflicts if a vertex cannot be assigned (no candidates found), that is added to outgoing conflicts
 	 * @return {@code true} if forward checking succeeds, else {@code false}
 	 */
-	private boolean forwardChecking(GPNode currentNode, Map<GPNode, List<GPNode>> incomingConflicts, Set<GPNode> outgoingConflicts) {
+	private boolean forwardChecking(GPNode currentNode, Map<GPNode, GPNodeSet> incomingConflicts, GPNodeSet outgoingConflicts) {
 		ForwardCheckingEvent forwardCheckingEvent = new ForwardCheckingEvent();
 		forwardCheckingEvent.begin();
 
@@ -377,8 +381,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 				forwardCheckingEvent.addNeighborsProcessed(neighbors.size());
 				List<N> otherNodeCandidates = candidates.get(otherNode);
 				assert otherNodeCandidates == null || !otherNodeCandidates.isEmpty();// this should normally not happen, null is written as empty in the paper
-				List<GPNode> otherNodeIncomingConflicts = incomingConflicts.computeIfAbsent(otherNode, n -> new ArrayList<>());
-				List<GPNode> currentNodeIncomingConflicts = incomingConflicts.computeIfAbsent(currentNode, n -> new ArrayList<>());
+				GPNodeSet otherNodeIncomingConflicts = incomingConflicts.computeIfAbsent(otherNode, n -> nodeSetFactory.createEmpty());
+				GPNodeSet currentNodeIncomingConflicts = incomingConflicts.computeIfAbsent(currentNode, n -> nodeSetFactory.createEmpty());
 				if(otherNodeCandidates == null || !neighbors.containsAll(Objects.requireNonNullElse(otherNodeCandidates, List.of()))){
 					otherNodeIncomingConflicts.addAll(currentNodeIncomingConflicts);
 					otherNodeIncomingConflicts.add(currentNode);

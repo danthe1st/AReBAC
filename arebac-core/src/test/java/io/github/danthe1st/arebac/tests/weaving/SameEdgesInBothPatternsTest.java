@@ -12,7 +12,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.weaving.Weaving;
 import org.junit.jupiter.api.Test;
 
-public class SameEdgesInBothPatternsTest {
+class SameEdgesInBothPatternsTest {
 	
 	private final String SAMPLE_NODE_TYPE = "NODE_TYPE";
 	private final String SAMPLE_EDGE_TYPE = "EDGE_TYPE";
