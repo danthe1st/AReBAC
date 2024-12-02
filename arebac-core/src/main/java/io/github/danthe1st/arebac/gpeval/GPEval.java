@@ -198,6 +198,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 		// all vertices where conflicts happened, used for backjumping
 		// if a conflict happened on a vertex and that vertex is reassigned, backjumping should stop/the search should continue
 		Set<GPNode> conflicts = new HashSet<>();
+		// outgoing conflicts are new conflicts resulting from forward checking "failures"
 		Set<GPNode> outgoingConflicts = new HashSet<>();
 
 		GPNode currentNode = pickNextNode();
@@ -364,6 +365,8 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 	 * @return {@code true} if forward checking succeeds, else {@code false}
 	 */
 	private boolean forwardChecking(GPNode currentNode, Map<GPNode, List<GPNode>> incomingConflicts, Set<GPNode> outgoingConflicts) {
+		
+		// we use a JFR event to provide diagnostic information about the forward checking process
 		ForwardCheckingEvent forwardCheckingEvent = new ForwardCheckingEvent();
 		forwardCheckingEvent.begin();
 
@@ -372,6 +375,9 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 		for(RelevantEdge relevantEdge : relevantEdges){
 			GPNode otherNode = relevantEdge.otherNode();
 			if(!assignments.containsKey(otherNode)){
+				// check neighbors of that edge in the graph pattern
+				// If a neighbor doesn't have any candidates, indicate "failure" of forward checking by returning false
+				// also need to add incoming and outgoing conflicts if applicable
 				forwardCheckingEvent.addUnknownEdge();
 				List<N> neighbors = getNeighborsSatisfyingEdgeAndAttributeRequirements(currentNode, relevantEdge, forwardCheckingEvent);
 				forwardCheckingEvent.addNeighborsProcessed(neighbors.size());
@@ -380,6 +386,10 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 				List<GPNode> otherNodeIncomingConflicts = incomingConflicts.computeIfAbsent(otherNode, n -> new ArrayList<>());
 				List<GPNode> currentNodeIncomingConflicts = incomingConflicts.computeIfAbsent(currentNode, n -> new ArrayList<>());
 				if(otherNodeCandidates == null || !neighbors.containsAll(Objects.requireNonNullElse(otherNodeCandidates, List.of()))){
+					// candidates are discovered or reduced
+					// in this case, the other node has (potential) incoming conflicts with
+					// - the current node
+					// - all incoming conflicts of the current node
 					otherNodeIncomingConflicts.addAll(currentNodeIncomingConflicts);
 					otherNodeIncomingConflicts.add(currentNode);
 				}
@@ -388,6 +398,7 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 					candidates.put(otherNode, otherNodeCandidates);
 				}else{
 					// intersect otherNodeCandidates with neighbors
+					// a JFR event is added here for diagnosis
 					IntersectionEvent event = new IntersectionEvent();
 					event.setNeighborsCount(neighbors.size());
 					event.setCandidatesCountBefore(otherNodeCandidates.size());
@@ -401,6 +412,9 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 					event.commit();
 				}
 				if(otherNodeCandidates.isEmpty()){
+					// there are no candidates for the neighboring node
+					// in this case, the current assignment is not possible
+					// add the neighboring node as an outgoing conflict
 					outgoingConflicts.add(otherNode);
 					return false;
 				}
@@ -423,7 +437,6 @@ public final class GPEval<N extends AttributedNode, E extends AttributedEdge<N>>
 		Collection<E> graphEdges;
 		Function<E, N> neighborFinder;
 		if(relevantEdge.isOutgoing()){
-			// TODO make this more efficient by finding the exact relevant edges
 			graphEdges = graph.findOutgoingEdges(currentNodeInDB, relevantEdge.edgeType());
 			neighborFinder = AttributedEdge::target;
 		}else{
