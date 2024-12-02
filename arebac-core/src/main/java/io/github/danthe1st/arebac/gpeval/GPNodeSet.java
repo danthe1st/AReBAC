@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
@@ -64,17 +65,13 @@ class GPNodeSet implements Iterable<GPNode> {
 	public boolean contains(GPNode node) {
 		return data.get(factory.getIndexFromNode(node));
 	}
-
+	
 	public GPNodeSet copy() {
 		return new GPNodeSet(factory, (BitSet) data.clone());
 	}
 
 	public void add(GPNode node) {
 		data.set(factory.getIndexFromNode(node));
-	}
-
-	public void remove(GPNode toRemove) {
-		data.set(factory.getIndexFromNode(toRemove), false);
 	}
 
 	public void addAll(GPNodeSet other) {
@@ -86,35 +83,28 @@ class GPNodeSet implements Iterable<GPNode> {
 			add(node);
 		}
 	}
-	
-	public void retainAll(GPNodeSet other) {
-		data.and(other.data);
-	}
-
-	public boolean containsAll(GPNodeSet other) {
-		BitSet otherWithoutThis = other.copy().data;
-		otherWithoutThis.andNot(data);
-		return otherWithoutThis.isEmpty();
-	}
 
 	public boolean isEmpty() {
 		return data.isEmpty();
 	}
-	
+
 	@Override
 	public Iterator<GPNode> iterator() {
 		return new Iterator<>() {
-			
+
 			int nextElementIndex = 0;
-			
+
 			@Override
 			public GPNode next() {
 				int index = data.nextSetBit(nextElementIndex);
+				if(index == -1){
+					throw new NoSuchElementException();
+				}
 				GPNode value = factory.getByIndex(index);
 				nextElementIndex = index + 1;
 				return value;
 			}
-			
+
 			@Override
 			public boolean hasNext() {
 				return data.nextSetBit(nextElementIndex) != -1;
