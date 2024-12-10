@@ -14,7 +14,7 @@ public class SOSetup {
 	
 	public static synchronized GraphDatabaseService getDatabase() throws IOException, IncorrectFormat, InterruptedException, URISyntaxException {
 		if(graphDb == null){
-			graphDb = Neo4JSetup.createDatabase(Path.of("testdb", "so"), new URI("https://github.com/neo4j-graph-examples/stackoverflow/raw/main/data/stackoverflow-50.dump").toURL());
+			graphDb = Neo4JSetup.createDatabase(Path.of("testdb", "so"), new URI("https://github.com/neo4j-graph-examples/stackoverflow/raw/7f0fa206ae9a0a4514a49879b3f497927f2beee0/data/stackoverflow-50.dump").toURL());
 		}
 		return graphDb;
 	}
