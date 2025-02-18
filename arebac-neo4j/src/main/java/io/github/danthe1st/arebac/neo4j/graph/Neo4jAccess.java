@@ -22,7 +22,7 @@ import org.neo4j.graphdb.schema.ConstraintDefinition;
 import org.neo4j.graphdb.schema.ConstraintType;
 
 /**
- * Represents a Neo4J database as an {@link AttributedGraph}.
+ * Represents access to a Neo4J database as an {@link AttributedGraph}.
  *
  * All operations are executed using the {@link Transaction} passed to the constructor.
  *
@@ -30,13 +30,13 @@ import org.neo4j.graphdb.schema.ConstraintType;
  *
  * This implementation supports {@link AttributedGraph#isAttributeUniqueForNodeType(String, String) unique attributes}.
  * A node attribute is considered {@link AttributedGraph#isAttributeUniqueForNodeType(String, String) unique} with respect to a given node type if a unique constraint on that attribute exists for that node type.
- * Information on unique attributes is cached. If unique constraints change after creating the {@link Neo4jDB} instance, these changes may not be observed.
+ * Information on unique attributes is cached. If unique constraints change after creating the {@link Neo4jAccess} instance, these changes may not be observed.
  */
-public class Neo4jDB implements AttributedGraph<Neo4jNode, Neo4jEdge> {
+public class Neo4jAccess implements AttributedGraph<Neo4jNode, Neo4jEdge> {
 	private final Transaction tx;
 	private final Map<String, Set<String>> uniqueAttributesPerNodeType = new HashMap<>();
 	
-	public Neo4jDB(Transaction tx) {
+	public Neo4jAccess(Transaction tx) {
 		this.tx = tx;
 	}
 	

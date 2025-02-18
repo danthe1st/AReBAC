@@ -16,7 +16,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.gpeval.GPEval;
-import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
+import io.github.danthe1st.arebac.neo4j.graph.Neo4jAccess;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import org.neo4j.dbms.archive.IncorrectFormat;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -149,13 +149,13 @@ public class SOBenchmark {
 		private int currentTagIndex = 0;
 		private final GraphDatabaseService database;
 		private final Transaction transaction;
-		private final Neo4jDB neo4jDB;
+		private final Neo4jAccess neo4jDB;
 		
 		public SOBenchmarkState() {
 			try{
 				database = SOSetup.getDatabase();
 				transaction = database.beginTx();
-				neo4jDB = new Neo4jDB(transaction);
+				neo4jDB = new Neo4jAccess(transaction);
 			}catch(IOException | IncorrectFormat | InterruptedException | URISyntaxException e){
 				throw new RuntimeException(e);
 			}
@@ -179,13 +179,13 @@ public class SOBenchmark {
 		private int currentTagIndex = 0;
 		private final GraphDatabaseService database;
 		private final Transaction transaction;
-		private final Neo4jDB neo4jDB;
+		private final Neo4jAccess neo4jDB;
 		
 		public SOBenchmarkUUIDState() {
 			try{
 				database = SOSetup.getDatabase();
 				transaction = database.beginTx();
-				neo4jDB = new Neo4jDB(transaction);
+				neo4jDB = new Neo4jAccess(transaction);
 			}catch(IOException | IncorrectFormat | InterruptedException | URISyntaxException e){
 				throw new RuntimeException(e);
 			}

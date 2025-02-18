@@ -17,7 +17,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirementOperator;
 import io.github.danthe1st.arebac.gpeval.GPEval;
-import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
+import io.github.danthe1st.arebac.neo4j.graph.Neo4jAccess;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class UniquenessTest {
 	@Test
 	void testUniqueConstraint() {
 		try(Transaction tx = database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
+			Neo4jAccess db = new Neo4jAccess(tx);
 			assertTrue(db.isAttributeUniqueForNodeType("name", "Tag"));
 			// executing it twice (using the lookup) shouldn't change the result
 			assertTrue(db.isAttributeUniqueForNodeType("name", "Tag"));
@@ -46,7 +46,7 @@ class UniquenessTest {
 	@Test
 	void testGetByUniqueAttribute() {
 		try(Transaction tx = database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
+			Neo4jAccess db = new Neo4jAccess(tx);
 			Neo4jNode node = db.getNodeByUniqueAttribute("Tag", "name", attribute("neo4j"));
 			assertEquals("neo4j", node.getAttribute("name").value());
 		}
@@ -55,7 +55,7 @@ class UniquenessTest {
 	@Test
 	void testGetByUniqueAttributeWithNonexistentValue() {
 		try(Transaction tx = database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
+			Neo4jAccess db = new Neo4jAccess(tx);
 			Neo4jNode node = db.getNodeByUniqueAttribute("Tag", "name", attribute("dfsgdfgd"));
 			assertNull(node);
 		}
@@ -71,7 +71,7 @@ class UniquenessTest {
 				Map.of(), List.of(gpNode), Map.of()
 		);
 		try(Transaction tx = database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
+			Neo4jAccess db = new Neo4jAccess(tx);
 			Set<List<Neo4jNode>> result = GPEval.evaluate(db, pattern);
 			assertTrue(result.isEmpty());
 		}

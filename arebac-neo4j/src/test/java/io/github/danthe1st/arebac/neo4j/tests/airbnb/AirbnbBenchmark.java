@@ -10,7 +10,7 @@ import java.util.function.Function;
 
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.gpeval.GPEval;
-import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
+import io.github.danthe1st.arebac.neo4j.graph.Neo4jAccess;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import org.neo4j.dbms.archive.IncorrectFormat;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -105,13 +105,13 @@ public class AirbnbBenchmark {
 		private final PatternInfo<String> reviewerPatternInfo;
 		private final PatternInfo<Scenario2Id> scenario2PatternInfo;
 		private Transaction transaction;
-		private final Neo4jDB neo4jDB;
+		private final Neo4jAccess neo4jDB;
 
 		public AirbnbState() {
 			try{
 				database = AirbnbSetup.getDatabase();
 				transaction = database.beginTx();
-				neo4jDB = new Neo4jDB(transaction);
+				neo4jDB = new Neo4jAccess(transaction);
 				hostPatternInfo = new PatternInfo<>(List.of("131304391", "155715332", "404944621"), Scenario1Test::createAuthorizedCetAllReviewsFromHostGraphPattern);
 				reviewerPatternInfo = new PatternInfo<>(List.of("272671293", "227163707", "268281268", "31292360"), Scenario1Test::createAuthorizedGetAllReviewsFromReviewerGraphPattern);
 				scenario2PatternInfo = new PatternInfo<>(List.of(new Scenario2Id("278934759", "1310402"), new Scenario2Id("363134483", "1310402")), id -> Scenario2Test.editListingInNeighborhoodPattern(id.subjectId(), id.neighborhoodId()));

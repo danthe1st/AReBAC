@@ -17,7 +17,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.gpeval.GPEval;
-import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
+import io.github.danthe1st.arebac.neo4j.graph.Neo4jAccess;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ class ElementIdTest {
 	void testLookupWithElementId() {
 		try(Transaction tx = database.beginTx()){
 			Node someNode = findSomeNode(tx);
-			Neo4jNode retrieved = new Neo4jDB(tx).findNodeById(someNode.getElementId());
+			Neo4jNode retrieved = new Neo4jAccess(tx).findNodeById(someNode.getElementId());
 			assertNotNull(retrieved);
 			assertEquals(someNode.getElementId(), retrieved.getDBNode().getElementId());
 		}
@@ -50,7 +50,7 @@ class ElementIdTest {
 	@Test
 	void testLookupWithNonexistentElementId() {
 		try(Transaction tx = database.beginTx()){
-			Neo4jNode retrieved = new Neo4jDB(tx).findNodeById("thisdoesnotexist");
+			Neo4jNode retrieved = new Neo4jAccess(tx).findNodeById("thisdoesnotexist");
 			assertNull(retrieved);
 		}
 	}
@@ -59,7 +59,7 @@ class ElementIdTest {
 	void testLookupWithNonexistentElementIdUsingGPEval() {
 		try(Transaction tx = database.beginTx()){
 			GraphPattern pattern = createGraphPatternExpectingElementId("thisdoesnotexist");
-			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
+			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jAccess(tx), pattern);
 			assertEquals(Set.of(), result);
 		}
 	}
@@ -70,7 +70,7 @@ class ElementIdTest {
 			Node someNode = findSomeNode(tx);
 			String elementId = someNode.getElementId();
 			GraphPattern pattern = createGraphPatternExpectingElementId(elementId);
-			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
+			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jAccess(tx), pattern);
 			assertEquals(1, result.size());
 			assertEquals(result, Set.of(List.of(new Neo4jNode(someNode))));
 		}

@@ -42,7 +42,7 @@ import io.github.danthe1st.arebac.data.memory.InMemoryGraphNode;
 import io.github.danthe1st.arebac.gpeval.GPEval;
 import io.github.danthe1st.arebac.jfr.JFRRecordedGraphNode;
 import io.github.danthe1st.arebac.jfr.JFRRecordedGraphWrapper;
-import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
+import io.github.danthe1st.arebac.neo4j.graph.Neo4jAccess;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import io.github.danthe1st.arebac.neo4j.tests.Neo4JSetup.RelType;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +71,7 @@ class SOTest {
 	@Test
 	void testFindAnswersOfUser() {
 		try(Transaction tx = database.beginTx()){
-			Neo4jDB dbAsGraph = new Neo4jDB(tx);
+			Neo4jAccess dbAsGraph = new Neo4jAccess(tx);
 			Node someUserNode = tx.findNode(Label.label("User"), "uuid", 6309);
 			GraphPattern pattern = createFindAnswersPattern(6309);
 			Set<List<Neo4jNode>> results = GPEval.evaluate(dbAsGraph, pattern);
@@ -165,7 +165,7 @@ class SOTest {
 			}
 
 			GraphPattern pattern = createCommentsToSameQuestionInTagPattern("name", tagName);
-			Set<List<JFRRecordedGraphNode<Neo4jNode>>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new JFRRecordedGraphWrapper<>(new Neo4jDB(tx)), pattern));
+			Set<List<JFRRecordedGraphNode<Neo4jNode>>> results = assertTimeout(Duration.ofSeconds(30), () -> GPEval.evaluate(new JFRRecordedGraphWrapper<>(new Neo4jAccess(tx)), pattern));
 			assertNotEquals(0, results.size());
 			assertEquals(expectedElementCount, results.size());
 			for(List<JFRRecordedGraphNode<Neo4jNode>> result : results){
@@ -277,7 +277,7 @@ class SOTest {
 					.collect(Collectors.toSet());
 			}
 			GraphPattern pattern = assertTimeout(Duration.ofSeconds(1), () -> createSelfAnswerPatternWithTagName(tagName));
-			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
+			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jAccess(tx), pattern);
 			assertNotEquals(0, result.size());
 			assertEquals(expectedResult, result);
 		}
@@ -304,7 +304,7 @@ class SOTest {
 					.collect(Collectors.toSet());
 			}
 			GraphPattern pattern = assertTimeout(Duration.ofSeconds(1), () -> createSelfAnswerPatternWithUUID(uuid));
-			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jDB(tx), pattern);
+			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jAccess(tx), pattern);
 			assertNotEquals(0, result.size());
 			assertEquals(expectedResult, result);
 		}

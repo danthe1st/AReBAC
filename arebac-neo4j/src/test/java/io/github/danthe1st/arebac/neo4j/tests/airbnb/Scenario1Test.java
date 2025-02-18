@@ -15,7 +15,7 @@ import io.github.danthe1st.arebac.data.graph_pattern.GPNode;
 import io.github.danthe1st.arebac.data.graph_pattern.GraphPattern;
 import io.github.danthe1st.arebac.data.graph_pattern.constraints.AttributeRequirement;
 import io.github.danthe1st.arebac.gpeval.GPEval;
-import io.github.danthe1st.arebac.neo4j.graph.Neo4jDB;
+import io.github.danthe1st.arebac.neo4j.graph.Neo4jAccess;
 import io.github.danthe1st.arebac.neo4j.graph.Neo4jNode;
 import io.github.danthe1st.arebac.weaving.Weaving;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +57,7 @@ class Scenario1Test {
 		 */
 		GraphPattern combined = createAuthorizedCetAllReviewsFromHostGraphPattern(hostId);
 		try(Transaction tx = database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
+			Neo4jAccess db = new Neo4jAccess(tx);
 			Set<List<Neo4jNode>> result = GPEval.evaluate(db, combined);
 			assertEquals(expectedCount, result.size());
 			for(List<Neo4jNode> resultEntry : result){
@@ -107,7 +107,7 @@ class Scenario1Test {
 		 */
 		GraphPattern combined = createAuthorizedGetAllReviewsFromReviewerGraphPattern(reviewerId);
 		try(Transaction tx = database.beginTx()){
-			Neo4jDB db = new Neo4jDB(tx);
+			Neo4jAccess db = new Neo4jAccess(tx);
 			Set<List<Neo4jNode>> result = GPEval.evaluate(db, combined);
 			assertEquals(expectedCount, result.size());
 			for(List<Neo4jNode> resultEntry : result){
