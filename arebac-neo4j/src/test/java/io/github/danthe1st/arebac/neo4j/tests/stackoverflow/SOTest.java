@@ -310,6 +310,57 @@ class SOTest {
 		}
 	}
 	
+	@ParameterizedTest
+	@ValueSource(ints = { 6554121, 12334270, 394071, 15127452 })
+	void testMultipleSelfConnections(int uuid) {
+		try(Transaction tx = database.beginTx()){
+			Set<List<Neo4jNode>> expectedResult;
+			try(Result testResult = tx.execute(
+					"""
+							MATCH (u:User)-[:ASKED]->(q:Question)
+							MATCH (u:User)-[:ASKED]->(q:Question)
+							MATCH (u:User)-[:ASKED]->(q:Question)
+							MATCH (u:User)-[:ASKED]->(q:Question)
+							MATCH (u:User)-[:ASKED]->(q:Question)
+							MATCH (u:User)-[:ASKED]->(q:Question)
+							MATCH (u:User)-[:ASKED]->(q:Question)
+							WHERE u.uuid=$uuid
+							RETURN q
+								""",
+					Map.of("uuid", uuid)
+			)){
+				expectedResult = testResult
+					.stream()
+					.map(res -> (Node) res.get("q"))
+					.map(Neo4jNode::new)
+					.map(List::of)
+					.collect(Collectors.toSet());
+			}
+			GPNode user = new GPNode("u", "User");
+			GPNode question = new GPNode("q", "Question");
+			GraphPattern pattern = new GraphPattern(
+					new GPGraph(
+							List.of(user, question),
+							List.of(
+									new GPEdge(user, question, null, "ASKED"),
+									new GPEdge(user, question, null, "ASKED"),
+									new GPEdge(user, question, null, "ASKED"),
+									new GPEdge(user, question, null, "ASKED"),
+									new GPEdge(user, question, null, "ASKED"),
+									new GPEdge(user, question, null, "ASKED"),
+									new GPEdge(user, question, null, "ASKED")
+							)
+					),
+					List.of(),
+					Map.of(user, List.of(new AttributeRequirement("uuid", EQUAL, attribute(uuid)))),
+					Map.of(), List.of(question), Map.of()
+			);
+			Set<List<Neo4jNode>> result = GPEval.evaluate(new Neo4jAccess(tx), pattern);
+			assertNotEquals(0, result.size());
+			assertEquals(expectedResult, result);
+		}
+	}
+	
 	static GraphPattern createSelfAnswerPatternWithTagName(String tagName) {
 		return createSelfAnswerPattern("tag", "name", attribute(tagName));
 	}
